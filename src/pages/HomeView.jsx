@@ -1,115 +1,152 @@
-// src/HomeView.jsx
-import React from 'react';
+// src/pages/HomeView.jsx
 import { useNavigate } from 'react-router-dom';
+import ProductCard from '../components/ui/ProductCard';
+import Button from '../components/ui/Button';
 
-const HomeView = ({ products, loading }) => {
+const HomeView = ({ products, loading, onAddToCart }) => {
   const navigate = useNavigate();
+  const featuredProducts = products?.slice(0, 8) || [];
 
-  // UX Optimization: Keeping exactly 8 items to create 2-3 clean rows of products
-  const featuredProducts = products ? products.slice(0, 8) : [];
+  const categories = [
+    { name: 'Electronics', detail: 'Essential tech for every room', icon: '💻', gradient: 'from-blue-500 to-cyan-500' },
+    { name: 'Fashion', detail: 'Elevated everyday wear', icon: '👕', gradient: 'from-pink-500 to-rose-500' },
+    { name: 'Home', detail: 'Smart lifestyle upgrades', icon: '🏠', gradient: 'from-emerald-500 to-teal-500' },
+    { name: 'Accessories', detail: 'Curated finishing touches', icon: '⌚', gradient: 'from-amber-500 to-orange-500' },
+  ];
+
+  const trustItems = [
+    { title: 'Free delivery', desc: 'On orders above Rs. 999', icon: '🚚' },
+    { title: 'Easy returns', desc: '30-day hassle-free policy', icon: '🔄' },
+    { title: 'Secure checkout', desc: 'Encrypted payment flow', icon: '🔒' },
+    { title: 'Support', desc: 'Online help in the same day', icon: '🎧' },
+  ];
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', color: '#333', padding: '10px 20px' }}>
-      
-      {/* Premium Visual Hero Banner */}
-      <div style={{
-        background: 'linear-gradient(135deg, #111827, #1f2937, #374151)',
-        padding: '50px 40px',
-        borderRadius: '12px',
-        color: '#fff',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: '40px',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
-      }}>
-        <div style={{ flex: 1, paddingRight: '20px' }}>
-          <span style={{ backgroundColor: '#e74c3c', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px' }}>
-            NEW ARRIVALS
-          </span>
-          <h1 style={{ fontSize: '2.4rem', margin: '12px 0 10px 0', lineHeight: '1.2' }}>
-            Discover Premium Tech Elegance
-          </h1>
-          <p style={{ fontSize: '1.05rem', color: '#d1d5db', marginBottom: '25px', maxWidth: '500px' }}>
-            Upgrade your standard workspace setup with top-tier performance accessories and devices tested for durability.
-          </p>
-          <button 
-            onClick={() => navigate('/products')}
-            style={{ padding: '12px 24px', backgroundColor: '#3498db', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
-          >
-            Browse Full Collection →
-          </button>
-        </div>
-        
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-          <img 
-            src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80" 
-            alt="Store Featured Banner" 
-            style={{ width: '100%', maxWidth: '360px', borderRadius: '8px', boxShadow: '0 10px 30px rgba(0,0,0,0.25)' }}
-          />
-        </div>
-      </div>
+    <div>
+      {/* Hero Section - Updated with better image */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-sapphire-50 via-white to-copper-50">
+        <div className="absolute inset-x-0 top-0 h-44 bg-[radial-gradient(circle_at_top_left,rgba(15,23,42,0.16),transparent_30%),radial-gradient(circle_at_top_right,rgba(197,138,95,0.18),transparent_38%)]" />
+        <div className="container-custom grid min-h-[580px] items-center gap-10 py-12 lg:grid-cols-[0.95fr_1.05fr] lg:py-16">
+          <div className="relative z-10">
+            <p className="eyebrow">Refined shopping</p>
+            <h1 className="mt-4 max-w-3xl text-4xl font-black tracking-tight text-ink-950 sm:text-5xl lg:text-6xl">
+              A calm, confident storefront built for quick decisions.
+            </h1>
+            <p className="mt-5 max-w-xl text-lg leading-8 text-ink-500">
+              Clear product hierarchy, concise trust signals, and a lightweight browsing experience that feels modern and dependable.
+            </p>
 
-      {/* Featured Products Collection (Multi-Row Grid) */}
-      <div style={{ marginBottom: '40px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <h2 style={{ margin: 0, color: '#111827', fontSize: '1.5rem', fontWeight: '700' }}>Trending Handpicked Items</h2>
-          <button 
-            onClick={() => navigate('/products')}
-            style={{ background: 'none', border: 'none', color: '#3498db', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' }}
-          >
-            See All Products ({products?.length || 0})
-          </button>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Button size="lg" onClick={() => navigate('/shop')}>Start shopping</Button>
+              <Button variant="secondary" size="lg" onClick={() => navigate('/products')}>Browse catalog</Button>
+            </div>
+
+            <div className="mt-8 grid max-w-xl grid-cols-3 divide-x divide-ink-200 rounded-[1.5rem] border border-ink-100 bg-surface-500 text-center shadow-soft">
+              <div className="p-4">
+                <div className="text-xl font-black text-ink-950">8k+</div>
+                <div className="text-xs text-ink-500">Products</div>
+              </div>
+              <div className="p-4">
+                <div className="text-xl font-black text-ink-950">4.7</div>
+                <div className="text-xs text-ink-500">Average rating</div>
+              </div>
+              <div className="p-4">
+                <div className="text-xl font-black text-ink-950">24h</div>
+                <div className="text-xs text-ink-500">Dispatch</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative">
+            <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-ink-900/10 via-white to-copper-200/20 blur-2xl" />
+            {/* UPDATED: Better hero image - Shopping lifestyle */}
+            <img
+              src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=1200&q=85"
+              alt="Online shopping delivery experience"
+              className="relative aspect-[4/3] w-full rounded-[2rem] object-cover shadow-soft"
+            />
+            <div className="absolute bottom-4 left-4 right-4 rounded-3xl border border-white/80 bg-white/95 p-4 shadow-lg backdrop-blur sm:left-auto sm:w-72">
+              <p className="text-sm font-bold text-ink-950">Focused discovery</p>
+              <p className="mt-1 text-sm leading-5 text-ink-500">High-contrast product cards, durable filters, and fast path actions.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Category Grid - Enhanced with icons */}
+      <section className="bg-surface-100 py-12">
+        <div className="container-custom">
+          <div className="text-center mb-8">
+            <p className="eyebrow">Shop by category</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-ink-950 mt-2">Browse our collections</h2>
+            <p className="text-ink-500 mt-2">Find exactly what you're looking for</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {categories.map((cat) => (
+              <button
+                key={cat.name}
+                type="button"
+                onClick={() => navigate(`/products?category=${cat.name.toLowerCase()}`)}
+                className="group relative overflow-hidden rounded-2xl p-6 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+              >
+                <div className={`absolute inset-0 bg-gradient-to-r ${cat.gradient} opacity-90 group-hover:opacity-100 transition-opacity`} />
+                <div className="relative z-10">
+                  <span className="text-4xl mb-2 block">{cat.icon}</span>
+                  <p className="text-lg font-semibold text-white">{cat.name}</p>
+                  <p className="mt-1 text-sm text-white/80">{cat.detail}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Products Section */}
+      <section className="container-custom py-12">
+        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="eyebrow">Featured collection</p>
+            <h2 className="section-heading mt-2">Products worth noticing</h2>
+            <p className="section-copy mt-3">A curated product grid with readable pricing, accessible CTA focus, and clean product summaries.</p>
+          </div>
+          <Button variant="secondary" onClick={() => navigate('/products')}>View all products</Button>
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>Loading store inventory...</div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {[...Array(8)].map((_, index) => (
+              <div key={index} className="h-[390px] animate-pulse rounded-[1.5rem] bg-surface-200" />
+            ))}
+          </div>
         ) : featuredProducts.length === 0 ? (
-          <div style={{ color: '#888', padding: '20px 0' }}>No items available on the storefront currently.</div>
+          <div className="card-surface p-10 text-center text-ink-500">No products available right now.</div>
         ) : (
-          /* Dynamic layout template matching the dashboard reference aesthetics */
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', 
-            gap: '25px' 
-          }}>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {featuredProducts.map((product) => (
-              <div 
-                key={product.product_id}
-                style={{ 
-                  border: '1px solid #e5e7eb', 
-                  borderRadius: '10px', 
-                  padding: '16px', 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  justifyContent: 'space-between', 
-                  backgroundColor: '#fff',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-                }}
-              >
-                <div style={{ height: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
-                  <img src={product.product_image} alt={product.product_name} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} />
-                </div>
-                <div>
-                  <h4 style={{ margin: '0 0 6px 0', fontSize: '14px', height: '38px', overflow: 'hidden', color: '#374151', lineHeight: '1.4' }}>
-                    {product.product_name}
-                  </h4>
-                  <div style={{ fontWeight: '700', color: '#e74c3c', fontSize: '1.15rem', marginBottom: '14px' }}>
-                    ₹{product.product_price}
-                  </div>
-                  <button 
-                    onClick={() => navigate(`/product/${product.product_id}`)}
-                    style={{ width: '100%', padding: '9px 0', backgroundColor: '#f9fafb', border: '1px solid #d1d5db', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', color: '#4b5563' }}
-                  >
-                    View Detail
-                  </button>
-                </div>
-              </div>
+              <ProductCard key={product.product_id} product={product} onAddToCart={onAddToCart} />
             ))}
           </div>
         )}
-      </div>
+      </section>
 
+      {/* Trust Indicators Section */}
+      <section className="bg-ink-950 py-12 text-white">
+        <div className="container-custom">
+          <div className="text-center mb-8">
+            <p className="eyebrow text-copper-400">Why choose us</p>
+            <h2 className="text-2xl md:text-3xl font-bold mt-2">Shopping with confidence</h2>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {trustItems.map((item) => (
+              <div key={item.title} className="rounded-[1.5rem] border border-white/10 bg-white/5 p-6 text-center hover:bg-white/10 transition-all duration-300">
+                <span className="text-3xl mb-3 block">{item.icon}</span>
+                <h3 className="font-semibold text-white">{item.title}</h3>
+                <p className="mt-2 text-sm text-copper-100">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 };
