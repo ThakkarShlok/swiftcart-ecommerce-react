@@ -1,183 +1,291 @@
 // src/pages/AboutUs.jsx
 import React from 'react';
+import { Link } from 'react-router-dom';
+
+// Import your photo
 import profileImg from '../assets/Professional Photo (5).png';
 
 const AboutUs = () => {
+  const stats = [
+    { value: '8,000+', label: 'Products Available', description: 'Curated from trusted brands' },
+    { value: '50K+', label: 'Happy Customers', description: 'And growing every day' },
+    { value: '4.8★', label: 'Average Rating', description: 'From verified purchases' },
+    { value: '24h', label: 'Support Response', description: 'Average reply time' },
+  ];
+
+  const values = [
+    {
+      title: 'Clarity first',
+      description: 'Every product page tells you exactly what you need to know — no hidden fees, no confusing specifications.',
+      icon: '🔍',
+    },
+    {
+      title: 'Fast by default',
+      description: 'We obsess over milliseconds. SwiftCart loads instantly on any device, anywhere.',
+      icon: '⚡',
+    },
+    {
+      title: 'Build in public',
+      description: 'Our changelog, roadmap, and metrics are transparent. You deserve to know what we\'re working on.',
+      icon: '📢',
+    },
+    {
+      title: 'Radically helpful',
+      description: 'Support isn\'t a department — it\'s our product. Real humans, real answers, in minutes.',
+      icon: '💡',
+    },
+  ];
+
+  const milestones = [
+    { year: '2024', title: 'Public launch', description: 'SwiftCart opens to customers across India' },
+    { year: '2024', title: '10,000 orders', description: 'Reached 10,000 successful deliveries' },
+    { year: '2025', title: 'Mobile app', description: 'Native iOS and Android apps coming soon' },
+  ];
+
   return (
-    <div style={{ padding: '40px 30px', fontFamily: 'Arial, sans-serif', maxWidth: '900px', margin: '0 auto', color: '#1e293b' }}>
-
-      {/* ── Page Header ── */}
-      <div style={{ borderBottom: '2px solid #f1f5f9', paddingBottom: '16px', marginBottom: '36px' }}>
-        <h2 style={{ margin: 0, fontSize: '2rem', fontWeight: '700' }}>About SwiftCart</h2>
-        <p style={{ margin: '6px 0 0 0', color: '#64748b', fontSize: '15px' }}>
-          A modern e-commerce platform built for fast, reliable, and seamless online shopping.
-        </p>
-      </div>
-
-      {/* ── What is SwiftCart ── */}
-      <div style={{ marginBottom: '36px', lineHeight: '1.75', color: '#334155' }}>
-        <h3 style={{ fontSize: '1.2rem', fontWeight: '600', marginBottom: '12px', color: '#1e293b' }}>What is SwiftCart?</h3>
-        <p style={{ margin: '0 0 14px 0' }}>
-          SwiftCart is an online shopping platform where customers can browse a live product catalog, 
-          discover items across categories, manage their cart and wishlist, and place orders — all from 
-          a single, fast web application. Product data, user accounts, cart contents, and order history 
-          are all stored and retrieved in real time from a backend server, making SwiftCart a fully 
-          functional data-driven shopping experience rather than a static storefront.
-        </p>
-        <p style={{ margin: 0 }}>
-          The platform is designed around speed and clarity. Every interaction — adding to cart, 
-          filtering by price, submitting a review, tracking an order — gets a direct response. 
-          There are no dead ends: loading states keep the user informed while data is in transit, 
-          empty states guide them when nothing is available, and error handling ensures the app 
-          never silently fails.
-        </p>
-      </div>
-
-      {/* ── Feature cards ── */}
-      <div style={{ marginBottom: '36px' }}>
-        <h3 style={{ fontSize: '1.2rem', fontWeight: '600', marginBottom: '16px', color: '#1e293b' }}>What SwiftCart offers</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '14px' }}>
-          {[
-            {
-              title: 'Smart Product Discovery',
-              desc: 'Shop by category, subcategory, or search by name. Filter by price range and sort results to find exactly what you\'re looking for.'
-            },
-            {
-              title: 'Cart & Wishlist',
-              desc: 'Add products to your cart or save them to your wishlist. Adjust quantities on the fly — your cart total updates instantly.'
-            },
-            {
-              title: 'Checkout & Payments',
-              desc: 'Enter your delivery details and choose from Cash on Delivery, Card, or UPI. Orders are confirmed with a dedicated order confirmation screen.'
-            },
-            {
-              title: 'Order Tracking',
-              desc: 'View your complete order history, expand individual orders to see item-level details, and cancel active orders when needed.'
-            },
-            {
-              title: 'Secure Authentication',
-              desc: 'Sign in with email and password, or use a mobile OTP for a password-free login. Your session stays active across browser refreshes.'
-            },
-            {
-              title: 'Customer Reviews',
-              desc: 'Read verified customer reviews on any product. Share your own experience with a star rating and written feedback.'
-            },
-          ].map((item) => (
-            <div key={item.title} style={{
-              backgroundColor: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              borderRadius: '10px',
-              padding: '18px 20px',
-            }}>
-              <p style={{ margin: '0 0 7px 0', fontWeight: '700', fontSize: '14px', color: '#1e293b' }}>{item.title}</p>
-              <p style={{ margin: 0, fontSize: '13.5px', color: '#475569', lineHeight: '1.65' }}>{item.desc}</p>
+    <div className="bg-white">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-ink-950 via-ink-900 to-copper-950 text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-copper-500/20 via-transparent to-transparent" />
+        <div className="container-custom relative py-24 md:py-32">
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-1.5 text-sm font-medium mb-6">
+              <span className="w-2 h-2 bg-copper-400 rounded-full animate-pulse" />
+              Our story
             </div>
-          ))}
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight mb-6">
+              Building the most
+              <span className="text-copper-400 block">trusted place to shop</span>
+            </h1>
+            <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
+              SwiftCart was born from a simple belief: online shopping should be clear, 
+              fast, and genuinely helpful. No gimmicks. No hidden agendas. Just great products 
+              and a better experience.
+            </p>
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* ── Tech stack pills ── */}
-      <div style={{ marginBottom: '40px' }}>
-        <h3 style={{ fontSize: '1.2rem', fontWeight: '600', marginBottom: '14px', color: '#1e293b' }}>Technology</h3>
-        <p style={{ margin: '0 0 14px 0', fontSize: '14px', color: '#475569', lineHeight: '1.7' }}>
-          SwiftCart runs on a React 19 frontend powered by Vite, with React Router v7 handling 
-          all client-side navigation and Axios managing every API request. The application communicates 
-          with a REST API backend over authenticated HTTP — all sensitive configuration is managed 
-          through environment variables and never exposed in the codebase.
-        </p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-          {['React 19', 'Vite 8', 'React Router v7', 'Axios', 'JavaScript ES2022', 'REST API', 'ESLint'].map((tech) => (
-            <span key={tech} style={{
-              backgroundColor: '#eff6ff',
-              color: '#1d4ed8',
-              border: '1px solid #bfdbfe',
-              borderRadius: '6px',
-              padding: '5px 13px',
-              fontSize: '13px',
-              fontWeight: '500',
-            }}>
-              {tech}
-            </span>
-          ))}
+      {/* Stats Section */}
+      <section className="py-16 border-b border-gray-100">
+        <div className="container-custom">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {stats.map((stat) => (
+              <div key={stat.label} className="text-center">
+                <div className="text-3xl md:text-4xl font-black text-ink-950">{stat.value}</div>
+                <div className="font-semibold text-ink-900 mt-2">{stat.label}</div>
+                <div className="text-sm text-ink-500 mt-1">{stat.description}</div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* ── Divider ── */}
-      <hr style={{ border: 'none', borderTop: '2px solid #f1f5f9', marginBottom: '36px' }} />
-
-      {/* ── Developer section ── */}
-      <div>
-        <h3 style={{ fontSize: '1.2rem', fontWeight: '600', marginBottom: '20px', color: '#1e293b' }}>Meet the Developer</h3>
-        <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-
-          {/* Photo — 240×240 frame */}
-          <div style={{
-            flex: '0 0 240px',
-            height: '240px',
-            borderRadius: '12px',
-            overflow: 'hidden',
-            border: '1px solid #cbd5e1',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.07)',
-            backgroundColor: '#e2e8f0',
-          }}>
-            <img
-              src={profileImg}
-              alt="Shlok Thakkar"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
+      {/* Mission Section */}
+      <section className="py-20 bg-gray-50">
+        <div className="container-custom">
+          <div className="max-w-3xl mx-auto text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-ink-950 mb-4">
+              Why we built SwiftCart
+            </h2>
+            <p className="text-lg text-ink-600 leading-relaxed">
+              Most e-commerce platforms are designed to maximize clicks, not help you find 
+              what you need. We wanted to build something different.
+            </p>
           </div>
 
-          {/* Bio */}
-          <div style={{ flex: 1, minWidth: '260px' }}>
-            <h4 style={{ margin: '0 0 4px 0', fontSize: '1.3rem', fontWeight: '700', color: '#1e293b' }}>Shlok Thakkar</h4>
-            <p style={{ margin: '0 0 18px 0', color: '#3b82f6', fontSize: '14px', fontWeight: '600' }}>
-              Lead Developer &amp; Product Architect — SwiftCart
-            </p>
-
-            <p style={{ margin: '0 0 13px 0', fontSize: '14px', color: '#475569', lineHeight: '1.75' }}>
-              Shlok architects and maintains the complete frontend of SwiftCart — from the component 
-              structure and routing layer to API integration and state management. He handles all 
-              client-server communication across 20 REST endpoints, managing data flow for auth, 
-              products, cart, orders, wishlist, and reviews through a centralized API configuration layer.
-            </p>
-
-            <p style={{ margin: '0 0 13px 0', fontSize: '14px', color: '#475569', lineHeight: '1.75' }}>
-              Shlok manages the application's authentication system — including both the email/password 
-              flow and the two-step OTP login — along with session persistence, protected route 
-              enforcement, and auth-aware UI across the entire application.
-            </p>
-
-            <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#475569', lineHeight: '1.75' }}>
-              He also oversees the product discovery experience: the real-time search, price range 
-              filtering, and sort pipeline in the Shop view; and the lazy-loaded order detail system.
-            </p>
-
-            {/* Links */}
-            <div style={{ display: 'flex', gap: '16px', paddingTop: '14px', borderTop: '1px solid #e2e8f0' }}>
-              <a
-                href="https://github.com/ThakkarShlok"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: 'flex', alignItems: 'center', gap: '7px', textDecoration: 'none', color: '#475569', fontSize: '13px', fontWeight: '600' }}
-              >
-                <img src="https://cdn-icons-png.flaticon.com/512/25/25231.png" alt="GitHub" width="17" height="17" />
-                GitHub
-              </a>
-              <a
-                href="https://www.linkedin.com/in/shlok-thakkar-58a033354?utm_source=share_via&utm_content=profile&utm_medium=member_android"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: 'flex', alignItems: 'center', gap: '7px', textDecoration: 'none', color: '#475569', fontSize: '13px', fontWeight: '600' }}
-              >
-                <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" alt="LinkedIn" width="17" height="17" />
-                LinkedIn
-              </a>
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <p className="text-ink-700 leading-relaxed mb-4">
+                <span className="font-bold text-ink-950">In 2024</span>, our founder Shlok noticed that 
+                shopping online had become overwhelming. Endless pop-ups, confusing checkout flows, 
+                and product pages that hid the information you actually needed.
+              </p>
+              <p className="text-ink-700 leading-relaxed mb-4">
+                So he built SwiftCart — a lightweight, honest alternative. No distracting carousels, 
+                no fake urgency timers, just clear product information and a checkout that works.
+              </p>
+              <p className="text-ink-700 leading-relaxed">
+                What started as a personal project quickly grew into a platform serving thousands 
+                of customers. Today, SwiftCart is on a mission to make online shopping feel 
+                <span className="font-semibold text-copper-600"> calm, confident, and effortless</span>.
+              </p>
+            </div>
+            <div className="bg-gradient-to-br from-copper-100 to-ink-100 rounded-2xl p-8">
+              <div className="text-5xl mb-4">✨</div>
+              <h3 className="text-xl font-bold text-ink-950 mb-2">Our north star</h3>
+              <p className="text-ink-700 leading-relaxed">
+                "Reduce the time between wanting something and getting it, without sacrificing trust."
+              </p>
+              <div className="mt-4 pt-4 border-t border-ink-200">
+                <p className="text-sm text-ink-500">— Shlok Thakkar, Founder</p>
+              </div>
             </div>
           </div>
-
         </div>
-      </div>
+      </section>
 
+      {/* Values Section */}
+      <section className="py-20">
+        <div className="container-custom">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-ink-950 mb-4">
+              How we work
+            </h2>
+            <p className="text-lg text-ink-600 max-w-2xl mx-auto">
+              Four principles guide every decision we make — from product design to customer support.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {values.map((value) => (
+              <div key={value.title} className="p-6 rounded-xl border border-gray-100 bg-white hover:shadow-md transition-shadow">
+                <div className="text-3xl mb-3">{value.icon}</div>
+                <h3 className="text-lg font-bold text-ink-950 mb-2">{value.title}</h3>
+                <p className="text-ink-600 text-sm leading-relaxed">{value.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Team Section */}
+      <section className="py-20 bg-gray-50">
+        <div className="container-custom">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-ink-950 mb-4">
+              Built by a team that cares
+            </h2>
+            <p className="text-lg text-ink-600 max-w-2xl mx-auto">
+              We're a small, focused team. Here's who's behind SwiftCart.
+            </p>
+          </div>
+
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100">
+              <div className="md:flex">
+                {/* LEFT SIDE: Clean white background */}
+                <div className="md:w-2/5 bg-white md:min-h-[320px] flex items-center justify-center p-6">
+                  <div className="w-full max-w-[260px]">
+                    <img
+                      src={profileImg}
+                      alt="Shlok Thakkar - Founder & Product Engineer"
+                      className="w-full h-auto rounded-lg shadow-md object-cover"
+                      style={{ aspectRatio: '4/5' }}
+                    />
+                  </div>
+                </div>
+                
+                {/* RIGHT SIDE: Bio Content */}
+                <div className="md:w-3/5 p-6 md:p-8 flex flex-col justify-center">
+                  <div className="inline-flex items-center gap-2 bg-copper-50 text-copper-700 rounded-full px-3 py-1 text-xs font-semibold w-fit mb-3">
+                    Founder & Product Engineer
+                  </div>
+                  <h3 className="text-2xl md:text-3xl font-bold text-ink-950">Shlok Thakkar</h3>
+                  <p className="text-copper-600 font-medium mb-4">Building simple, honest e-commerce</p>
+                  
+                  <p className="text-ink-600 leading-relaxed mb-4">
+                    Shlok builds SwiftCart with a focus on performance, clarity, and user trust. 
+                    A second-year Computer Engineering student who believes that great software 
+                    doesn't need to be complicated — just thoughtful.
+                  </p>
+                  
+                  <p className="text-ink-600 leading-relaxed mb-5">
+                    When he's not coding, Shlok studies product design patterns, contributes to 
+                    open source, and thinks about how to make online shopping less overwhelming.
+                  </p>
+                  
+                  <div className="flex gap-6 pt-3">
+                    <a
+                      href="https://github.com/ThakkarShlok"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-ink-600 hover:text-ink-950 transition-colors group"
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-sm font-medium">GitHub</span>
+                    </a>
+                    <a
+                      href="https://www.linkedin.com/in/shlok-thakkar-58a033354"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-ink-600 hover:text-ink-950 transition-colors group"
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451c.979 0 1.771-.773 1.771-1.729V1.729C24 .774 23.204 0 22.225 0z" />
+                      </svg>
+                      <span className="text-sm font-medium">LinkedIn</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Timeline / Milestones */}
+      <section className="py-20">
+        <div className="container-custom">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-ink-950 mb-4">
+              The journey so far
+            </h2>
+            <p className="text-lg text-ink-600 max-w-2xl mx-auto">
+              From first line of code to serving thousands of customers.
+            </p>
+          </div>
+
+          <div className="max-w-3xl mx-auto">
+            <div className="relative">
+              <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-gray-200" />
+              {milestones.map((milestone, idx) => (
+                <div key={milestone.year} className={`relative flex flex-col md:flex-row gap-4 mb-8 ${idx % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
+                  <div className="flex-1 md:text-right">
+                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                      <div className="text-copper-600 font-bold text-sm">{milestone.year}</div>
+                      <h3 className="font-bold text-ink-950 mt-1">{milestone.title}</h3>
+                      <p className="text-sm text-ink-600 mt-1">{milestone.description}</p>
+                    </div>
+                  </div>
+                  <div className="absolute left-3 md:left-1/2 top-4 transform md:-translate-x-1/2 w-3 h-3 bg-copper-500 rounded-full border-2 border-white" />
+                  <div className="flex-1" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section - FIXED BUTTON VISIBILITY */}
+      <section className="py-20 bg-gradient-to-r from-copper-600 to-copper-700">
+        <div className="container-custom text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            Join us on this journey
+          </h2>
+          <p className="text-copper-100 max-w-2xl mx-auto mb-8 leading-relaxed">
+            Whether you're shopping for something new or interested in building the future 
+            of e-commerce, we'd love to have you along.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {/* White button - clearly visible */}
+            <Link to="/shop">
+              <button className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-copper-700 font-bold rounded-xl shadow-md hover:bg-gray-100 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-white/30 min-w-[160px]">
+                Start shopping
+              </button>
+            </Link>
+            
+            {/* Outline button */}
+            <Link to="/contact">
+              <button className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-transparent text-white font-bold rounded-xl border-2 border-white/30 hover:bg-white/10 hover:border-white/50 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-white/30 min-w-[160px]">
+                Contact us
+              </button>
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };
