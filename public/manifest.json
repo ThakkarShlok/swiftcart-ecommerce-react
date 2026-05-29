@@ -1,0 +1,9 @@
+{
+  "name": "SwiftCart",
+  "short_name": "SwiftCart",
+  "description": "Modern E-Commerce Platform by Shlok Thakkar",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#FF5A1F",
+  "background_color": "#FFFFFF"
+}
