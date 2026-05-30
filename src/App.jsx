@@ -116,10 +116,10 @@ function App() {
     <div>
       <main>
         <Routes>
-          <Route element={<Layout isLoggedIn={isLoggedIn} userData={userData} handleLogout={handleLogout} searchQuery={searchQuery} setSearchQuery={setSearchQuery} showSearchInput={showSearchInput} />}>
-            <Route index element={<HomeView products={processedProducts} loading={loading} />} />
+          <Route element={<Layout isLoggedIn={isLoggedIn} userData={userData} handleLogout={handleLogout} searchQuery={searchQuery} setSearchQuery={setSearchQuery} showSearchInput={showSearchInput} products={products} />}>
+            <Route index element={<HomeView products={processedProducts} loading={loading} onAddToCart={handleAddToCartBackend} />} />
             <Route path="about" element={<AboutUs />} />
-            <Route path="products" element={<ProductsView products={processedProducts} loading={loading} />} />
+            <Route path="products" element={<ProductsView products={processedProducts} loading={loading} onAddToCart={handleAddToCartBackend} />} />
             <Route path="product/:id" element={<ProductDetail token={API_TOKEN} isLoggedIn={isLoggedIn} userId={userData?.user_id} onAddToCart={handleAddToCartBackend} />} />
             <Route path="cart" element={isLoggedIn ? <CartView token={API_TOKEN} isLoggedIn={isLoggedIn} userId={userData?.user_id} /> : <Navigate to="/" replace />} />
             <Route path="wishlist" element={<WishlistView token={API_TOKEN} isLoggedIn={isLoggedIn} />} />

@@ -1,8 +1,9 @@
-// src/components/Layout.jsx - UPDATED
+// src/components/Layout.jsx
 import { useEffect, useMemo, useState } from 'react';
 import { Outlet, Link, NavLink } from 'react-router-dom';
 import Button from './ui/Button';
 import { useCart } from '../hooks/useCart';
+import AIChatbot from './ui/AIChatbot';  // ← ADD THIS IMPORT
 
 const Icon = ({ name, className = 'h-5 w-5' }) => {
   const icons = {
@@ -23,18 +24,15 @@ const Icon = ({ name, className = 'h-5 w-5' }) => {
   );
 };
 
-const Layout = ({ isLoggedIn, userData, handleLogout, searchQuery, setSearchQuery, showSearchInput }) => {
+// ↓ ADD products, isLoggedIn, userData to props — passed down from App.jsx
+const Layout = ({ isLoggedIn, userData, handleLogout, searchQuery, setSearchQuery, showSearchInput, products }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  
-  // Get cart count from hook
+
   const { cartCount, fetchCart } = useCart(userData?.user_id, isLoggedIn);
-  
-  // Refresh cart when login state changes or when items are added
+
   useEffect(() => {
-    if (isLoggedIn && userData?.user_id) {
-      fetchCart();
-    }
+    if (isLoggedIn && userData?.user_id) fetchCart();
   }, [isLoggedIn, userData?.user_id, fetchCart]);
 
   useEffect(() => {
@@ -109,7 +107,6 @@ const Layout = ({ isLoggedIn, userData, handleLogout, searchQuery, setSearchQuer
               </Link>
               <Link to="/cart" className="nav-icon relative" aria-label="View cart">
                 <Icon name="cart" />
-                {/* DYNAMIC CART COUNT - Now updates in real-time */}
                 {cartCount > 0 && (
                   <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-copper-500 px-1 text-[11px] font-bold text-white animate-scale-up">
                     {cartCount > 99 ? '99+' : cartCount}
@@ -215,20 +212,19 @@ const Layout = ({ isLoggedIn, userData, handleLogout, searchQuery, setSearchQuer
         </div>
       </footer>
 
+      {/* ✦ AI Chatbot — floats globally above all pages */}
+      <AIChatbot
+        products={products}
+        isLoggedIn={isLoggedIn}
+        userData={userData}
+      />
+
       <style jsx>{`
         @keyframes scale-up {
-          from {
-            opacity: 0;
-            transform: scale(0.5);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
+          from { opacity: 0; transform: scale(0.5); }
+          to   { opacity: 1; transform: scale(1); }
         }
-        .animate-scale-up {
-          animation: scale-up 0.2s ease-out;
-        }
+        .animate-scale-up { animation: scale-up 0.2s ease-out; }
       `}</style>
     </div>
   );
