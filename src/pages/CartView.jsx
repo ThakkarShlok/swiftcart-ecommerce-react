@@ -6,8 +6,9 @@ import { getApiUrl, authHeaders } from '../api/apiConfig';
 import Button from '../components/ui/Button';
 import QuantityInput from '../components/ui/QuantityInput';
 import { useCart } from '../hooks/useCart';
+import AICartUpsell from '../components/ui/AICartUpsell';
 
-const CartView = ({ token, isLoggedIn, userId }) => {
+const CartView = ({ token, isLoggedIn, userId, allProducts, onAddToCart }) => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(null);
@@ -246,6 +247,12 @@ const CartView = ({ token, isLoggedIn, userId }) => {
           </Link>
         </aside>
       </div>
+
+      <AICartUpsell
+        cartItems={cartItems}
+        allProducts={allProducts}
+        onAddToCart={onAddToCart}
+      />
     </div>
   );
 };

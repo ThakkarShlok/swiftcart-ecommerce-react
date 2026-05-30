@@ -121,7 +121,10 @@ function App() {
             <Route path="about" element={<AboutUs />} />
             <Route path="products" element={<ProductsView products={processedProducts} loading={loading} onAddToCart={handleAddToCartBackend} />} />
             <Route path="product/:id" element={<ProductDetail token={API_TOKEN} isLoggedIn={isLoggedIn} userId={userData?.user_id} onAddToCart={handleAddToCartBackend} />} />
-            <Route path="cart" element={isLoggedIn ? <CartView token={API_TOKEN} isLoggedIn={isLoggedIn} userId={userData?.user_id} /> : <Navigate to="/" replace />} />
+            <Route path="cart" element={isLoggedIn
+  ? <CartView token={API_TOKEN} isLoggedIn={isLoggedIn} userId={userData?.user_id} allProducts={products} onAddToCart={handleAddToCartBackend} />
+  : <Navigate to="/" replace />
+} />
             <Route path="wishlist" element={<WishlistView token={API_TOKEN} isLoggedIn={isLoggedIn} />} />
             <Route path="checkout" element={isLoggedIn ? <CheckoutView isLoggedIn={isLoggedIn} userId={userData?.user_id} /> : <Navigate to="/" replace />} />
             <Route path="orders" element={isLoggedIn ? <OrdersView token={API_TOKEN} isLoggedIn={isLoggedIn} userId={userData?.user_id} /> : <Navigate to="/" replace />} />
