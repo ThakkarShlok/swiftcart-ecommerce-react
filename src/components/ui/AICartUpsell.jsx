@@ -54,7 +54,11 @@ Choose 3 products that best complement the cart. Reply ONLY with this JSON, no o
     contents: prompt,
     // ✅ FIX 2b: 512 is enough for 3 short JSON objects.
     // The thinking model uses its own internal budget separately.
-    config: { temperature: 0.3, maxOutputTokens: 512 },
+    config: {
+          temperature: 0.3,
+          maxOutputTokens: 2048,
+          thinkingConfig: { thinkingBudget: 0 },
+        },
   });
 
   let text = response.text;

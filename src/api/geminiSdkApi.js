@@ -48,10 +48,10 @@ Reply with ONLY this JSON, no other text:
       contents: prompt,
       config: {
         temperature: 0.1,
-        // ✅ Raised to 1024 — gemini-2.5-flash is a thinking model,
-        //    it consumes tokens internally before outputting.
-        //    300 was cutting the response mid-sentence.
         maxOutputTokens: 1024,
+        // thinkingBudget: 0 disables internal reasoning tokens on gemini-2.5-flash
+        // so the full token budget goes to the actual JSON output, not thinking.
+        thinkingConfig: { thinkingBudget: 0 },
       },
     });
 

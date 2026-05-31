@@ -114,10 +114,11 @@ const AIChatbot = ({ products = [], isLoggedIn = false, userData = null }) => {
           systemInstruction: buildSystemPrompt(products, isLoggedIn, userData?.user_name),
           temperature: 0.7,
           maxOutputTokens: 300,
+          thinkingConfig: { thinkingBudget: 0 },
         },
       });
 
-      const replyText = response.text?.trim() || 'Sorry, I could not understand that. Could you rephrase?';
+      const replyText = (response.text || '').trim() || 'Sorry, I could not understand that. Could you rephrase?';
       historyRef.current = [
         ...newHistory,
         { role: 'model', parts: [{ text: replyText }] },

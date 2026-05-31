@@ -4,6 +4,7 @@ import axios from 'axios';
 import Button from '../components/ui/Button';
 import { getApiUrl, authHeaders, API_TOKEN } from '../api/apiConfig';
 import AIReviewSummary from '../components/ui/AIReviewSummary';
+import AIPricingExplainer from '../components/ui/AIPricingExplainer';
 
 const formatPrice = (price) => new Intl.NumberFormat('en-IN', {
   style: 'currency',
@@ -350,6 +351,10 @@ const ProductDetail = ({ token = API_TOKEN, isLoggedIn, userId, onAddToCart }) =
           <div className="mt-6 rounded-xl bg-surface-100 p-4">
             <div className="text-3xl font-black text-ink-950">{formatPrice(product.product_price || product.price)}</div>
             <p className="mt-1 text-sm text-ink-500">Inclusive of all taxes. Shipping calculated at checkout.</p>
+            {/* Separator + AI explainer lives inside the price card so it's seen immediately */}
+            <div className="mt-3 border-t border-ink-100 pt-3">
+              <AIPricingExplainer product={product} />
+            </div>
           </div>
 
           <p className="mt-6 leading-7 text-ink-500">{product.product_details || product.product_description || product.description || 'No details available for this product.'}</p>
