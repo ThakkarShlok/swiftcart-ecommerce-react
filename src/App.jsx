@@ -117,7 +117,7 @@ function App() {
       <main>
         <Routes>
           <Route element={<Layout isLoggedIn={isLoggedIn} userData={userData} handleLogout={handleLogout} searchQuery={searchQuery} setSearchQuery={setSearchQuery} showSearchInput={showSearchInput} products={products} />}>
-            <Route index element={<HomeView products={processedProducts} loading={loading} onAddToCart={handleAddToCartBackend} />} />
+            <Route index element={<HomeView products={processedProducts} loading={loading} onAddToCart={handleAddToCartBackend} isLoggedIn={isLoggedIn} userData={userData} token={API_TOKEN} />} />
             <Route path="about" element={<AboutUs />} />
             <Route path="products" element={<ProductsView products={processedProducts} loading={loading} onAddToCart={handleAddToCartBackend} />} />
             <Route path="product/:id" element={<ProductDetail token={API_TOKEN} isLoggedIn={isLoggedIn} userId={userData?.user_id} onAddToCart={handleAddToCartBackend} />} />

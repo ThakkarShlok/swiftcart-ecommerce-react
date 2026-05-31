@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ui/ProductCard';
 import Button from '../components/ui/Button';
+import AIPersonalizedBanner from '../components/ui/AIPersonalizedBanner';
 
 // Professional rotating word - clean and calm
 const RotatingWord = () => {
@@ -43,7 +44,7 @@ const VisitorCounter = () => {
   );
 };
 
-const HomeView = ({ products, loading, onAddToCart }) => {
+const HomeView = ({ products, loading, onAddToCart, isLoggedIn, userData, token }) => {
   const navigate = useNavigate();
   const featuredProducts = products?.slice(0, 8) || [];
 
@@ -119,7 +120,7 @@ const HomeView = ({ products, loading, onAddToCart }) => {
             <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-copper-400/30 via-sapphire-400/20 to-ink-400/30 blur-2xl group-hover:scale-105 transition-transform duration-700" />
             <div className="relative rounded-2xl overflow-hidden shadow-2xl">
               <img
-                src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=1200&q=85"
+                src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1200&q=90"
                 alt="Online shopping experience"
                 className="w-full h-auto group-hover:scale-105 transition-transform duration-700"
               />
@@ -138,7 +139,14 @@ const HomeView = ({ products, loading, onAddToCart }) => {
         </div>
       </section>
 
-     
+      {/* AI Personalised Banner — only renders for logged-in users */}
+      <div className="container-custom mt-6">
+        <AIPersonalizedBanner
+          isLoggedIn={isLoggedIn}
+          userData={userData}
+          token={token}
+        />
+      </div>
 
 {/* Rating Summary - Social Proof Section */}
 <div className="bg-white py-8 border-b border-gray-100">
