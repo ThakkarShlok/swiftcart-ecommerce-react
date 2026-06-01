@@ -21,9 +21,11 @@ import LoginWithOtp from './pages/LoginWithOtp';
 import VerifyOtp from './pages/VerifyOtp';
 import NotFound from './pages/NotFound';
 import Layout from './components/Layout';
+import { ToastContainer, useToast } from './components/ui/Toast';
 
 function App() {
   const [products, setProducts] = useState([]);
+  const { toasts, addToast, removeToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -71,7 +73,7 @@ function App() {
 
   const handleAddToCartBackend = async (product) => {
     if (!isLoggedIn || !userData?.user_id) {
-      alert("Please login first to manage your cart.");
+      addToast('Please sign in to add items to your cart.', 'warning');
       navigate('/login');
       return;
     }
@@ -87,9 +89,9 @@ function App() {
       });
 
       if (res.data.flag == "1" || res.data.flag == 1) {
-        alert(res.data.message || "Item added to your cart!");
+        addToast(res.data.message || 'Item added to your cart!', 'success');
       } else {
-        alert(res.data.message || "Could not complete cart action.");
+        addToast(res.data.message || 'Could not add item to cart.', 'error');
       }
     } catch (err) {
       console.error("Cart error:", err);
@@ -140,6 +142,7 @@ function App() {
           </Route>
         </Routes>
       </main>
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   );
 }

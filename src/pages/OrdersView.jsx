@@ -1,46 +1,63 @@
-// src/OrdersView.jsx
-import React, { useState, useEffect } from 'react';
+// src/pages/OrdersView.jsx
+import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { getApiUrl, authHeaders } from '../api/apiConfig';
+import Button from '../components/ui/Button';
+import { ToastContainer, useToast } from '../components/ui/Toast';
+
+const formatPrice = (val) =>
+  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 })
+    .format(Number(val || 0));
+
+const StatusBadge = ({ status }) => {
+  const s = status?.toLowerCase();
+  const styles = {
+    cancelled:  'bg-red-50   text-red-700   border-red-100',
+    delivered:  'bg-copper-50 text-copper-700 border-copper-100',
+    shipped:    'bg-sapphire-50 text-sapphire-700 border-sapphire-100',
+  };
+  const cls = styles[s] || 'bg-surface-200 text-ink-600 border-ink-100';
+  return (
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${cls}`}>
+      {status || 'Pending'}
+    </span>
+  );
+};
 
 const OrdersView = ({ token, isLoggedIn, userId }) => {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [orders, setOrders]                     = useState([]);
+  const [loading, setLoading]                   = useState(false);
   const [selectedOrderDetails, setSelectedOrderDetails] = useState({});
-  const [fetchingDetails, setFetchingDetails] = useState({});
-  const [cancelReasons, setCancelReasons] = useState({});
-  
+  const [fetchingDetails, setFetchingDetails]   = useState({});
+  const [cancelReasons, setCancelReasons]       = useState({});
+  const [cancelling, setCancelling]             = useState({});
+  const [confirmCancel, setConfirmCancel]       = useState({});
+
   const navigate = useNavigate();
+  const { toasts, addToast, removeToast } = useToast();
 
-  const LIST_ORDERS_URL = getApiUrl('api-list-order.php');
-  const ORDER_DETAILS_URL = getApiUrl('api-list-order-detail.php');
-  const CANCEL_ORDER_URL = getApiUrl('api-order-cancel.php');
+  // ── All API logic preserved exactly from original ────────────────────────────
 
-  // 1. Fetch Primary Order History Ledger
   const fetchOrderLog = async () => {
     if (!isLoggedIn || !userId) {
-      alert("Authentication required. Redirecting to login session...");
       navigate('/login');
       return;
     }
-
     setLoading(true);
     try {
       const payload = new FormData();
       payload.append('user_id', userId);
-
-      const res = await axios.post(LIST_ORDERS_URL, payload, {
-        headers: authHeaders(token)
+      const res = await axios.post(getApiUrl('api-list-order.php'), payload, {
+        headers: authHeaders(token),
       });
-
-      if (res.data && String(res.data.flag) === "1") {
+      if (res.data && String(res.data.flag) === '1') {
         setOrders(res.data.order_list || []);
       } else {
         setOrders([]);
       }
     } catch (err) {
-      console.error("Order tracking allocation fault:", err);
+      console.error('Orders fetch error:', err);
       setOrders([]);
     } finally {
       setLoading(false);
@@ -48,226 +65,305 @@ const OrdersView = ({ token, isLoggedIn, userId }) => {
   };
 
   useEffect(() => {
-    if (isLoggedIn && userId) {
-      fetchOrderLog();
-    }
+    if (isLoggedIn && userId) fetchOrderLog();
   }, [isLoggedIn, userId]);
 
-  // 2. Fetch Detailed Line-Items payload on Expansion
   const toggleOrderExpansion = async (orderId) => {
     if (selectedOrderDetails[orderId]) {
-      const updatedDetails = { ...selectedOrderDetails };
-      delete updatedDetails[orderId];
-      setSelectedOrderDetails(updatedDetails);
+      const updated = { ...selectedOrderDetails };
+      delete updated[orderId];
+      setSelectedOrderDetails(updated);
       return;
     }
-
-    setFetchingDetails(prev => ({ ...prev, [orderId]: true }));
+    setFetchingDetails((prev) => ({ ...prev, [orderId]: true }));
     try {
       const payload = new FormData();
       payload.append('user_id', userId);
       payload.append('order_id', orderId);
-
-      const res = await axios.post(ORDER_DETAILS_URL, payload, {
-        headers: authHeaders(token)
+      const res = await axios.post(getApiUrl('api-list-order-detail.php'), payload, {
+        headers: authHeaders(token),
       });
-
-      // 🟢 FIXED ATTRIBUTE ACCESS: Reads 'order_details' array key directly from Postman schema
-      if (res.data && String(res.data.flag) === "1") {
-        setSelectedOrderDetails(prev => ({
+      if (res.data && String(res.data.flag) === '1') {
+        setSelectedOrderDetails((prev) => ({
           ...prev,
-          [orderId]: res.data.order_details || [] 
+          [orderId]: res.data.order_details || [],
         }));
-      } else {
-        alert(res.data.message || "Failed to parse itemized details.");
       }
     } catch (err) {
-      console.error("Nested item detail pipeline breakdown:", err);
+      console.error('Order details fetch error:', err);
     } finally {
-      setFetchingDetails(prev => ({ ...prev, [orderId]: false }));
+      setFetchingDetails((prev) => ({ ...prev, [orderId]: false }));
     }
   };
 
-  // 3. Cancel Active Order
-  const handleCancelTransaction = async (orderId) => {
+  const handleCancelOrder = async (orderId) => {
     const reason = cancelReasons[orderId]?.trim();
-    if (!reason) {
-      alert("Please provide a cancellation reason.");
+    if (!reason) return;
+    if (!confirmCancel[orderId]) {
+      setConfirmCancel((prev) => ({ ...prev, [orderId]: true }));
       return;
     }
+    setConfirmCancel((prev) => ({ ...prev, [orderId]: false }));
 
-    if (!window.confirm("Are you sure you want to cancel this order?")) return;
-
+    setCancelling((prev) => ({ ...prev, [orderId]: true }));
     try {
       const payload = new FormData();
       payload.append('user_id', userId);
       payload.append('order_id', orderId);
       payload.append('cancel_reason', reason);
-
-      const res = await axios.post(CANCEL_ORDER_URL, payload, {
-        headers: authHeaders(token)
+      const res = await axios.post(getApiUrl('api-order-cancel.php'), payload, {
+        headers: authHeaders(token),
       });
-
-      if (res.data && String(res.data.flag) === "1") {
-        alert(res.data.message || "Order successfully cancelled.");
-        setCancelReasons(prev => {
-          const freshReasons = { ...prev };
-          delete freshReasons[orderId];
-          return freshReasons;
-        });
-        fetchOrderLog(); 
+      if (res.data && String(res.data.flag) === '1') {
+        addToast(res.data.message || 'Order cancelled successfully.', 'success');
+        setCancelReasons((prev) => { const r = { ...prev }; delete r[orderId]; return r; });
+        fetchOrderLog();
       } else {
-        alert(res.data.message || "Cancellation request rejected by remote service.");
+        addToast(res.data.message || 'Could not cancel this order.', 'error');
       }
     } catch (err) {
-      console.error("Cancellation transmission pipeline fault:", err);
+      console.error('Cancel order error:', err);
+    } finally {
+      setCancelling((prev) => ({ ...prev, [orderId]: false }));
     }
   };
 
-  const handleReasonTextChange = (orderId, val) => {
-    setCancelReasons(prev => ({ ...prev, [orderId]: val }));
-  };
+  // ── Loading skeleton ─────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="container-custom py-10">
+        <div className="mb-8">
+          <div className="h-3 w-24 animate-pulse rounded-full bg-surface-200" />
+          <div className="mt-3 h-8 w-48 animate-pulse rounded-full bg-surface-200" />
+        </div>
+        <div className="flex flex-col gap-4">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="card-surface p-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="space-y-2">
+                  <div className="h-4 w-32 animate-pulse rounded-full bg-surface-200" />
+                  <div className="h-3 w-24 animate-pulse rounded-full bg-surface-200" />
+                </div>
+                <div className="h-4 w-20 animate-pulse rounded-full bg-surface-200" />
+                <div className="h-6 w-20 animate-pulse rounded-full bg-surface-200" />
+                <div className="h-9 w-28 animate-pulse rounded-2xl bg-surface-200" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
+  // ── Empty state ──────────────────────────────────────────────────────────────
+  if (!loading && orders.length === 0) {
+    return (
+      <div className="container-custom py-16">
+        <div className="card-surface mx-auto max-w-md p-10 text-center">
+          <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-2xl bg-surface-200 text-3xl">
+            📦
+          </div>
+          <h2 className="text-xl font-bold text-ink-950">No orders yet</h2>
+          <p className="mt-2 text-sm text-ink-500">
+            When you place an order it will appear here.
+          </p>
+          <Link to="/shop">
+            <Button size="lg" className="mt-6">Start shopping</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Main page ────────────────────────────────────────────────────────────────
   return (
-    <div style={{ padding: '20px', maxWidth: '1100px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>
-      <h2 style={{ color: '#1e293b', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px' }}>
-        Order Tracking Ledger
-      </h2>
+    <div className="container-custom py-10">
+      {/* Page header */}
+      <div className="mb-8">
+        <p className="eyebrow">Account</p>
+        <h1 className="section-heading mt-2">My orders</h1>
+        <p className="section-copy mt-2">
+          {orders.length} order{orders.length !== 1 ? 's' : ''} placed with SwiftCart.
+        </p>
+      </div>
 
-      {loading ? (
-        <p style={{ color: '#64748b' }}>Querying transaction history databases...</p>
-      ) : orders.length === 0 ? (
-        <p style={{ color: '#64748b' }}>No active or historical order channels discovered.</p>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '20px' }}>
-          {orders.map((order) => {
-            const isExpanded = !!selectedOrderDetails[order.order_id];
-            const items = selectedOrderDetails[order.order_id] || [];
-            
-            const displayTotal = order.order_total || order.order_amount || '0.00';
+      <div className="flex flex-col gap-4">
+        {orders.map((order) => {
+          const orderId   = order.order_id;
+          const isExpanded   = !!selectedOrderDetails[orderId];
+          const isFetching   = !!fetchingDetails[orderId];
+          const isCancelling = !!cancelling[orderId];
+          const items        = selectedOrderDetails[orderId] || [];
+          const displayTotal = order.order_total || order.order_amount || '0.00';
+          const isCancelled  = order.order_status?.toLowerCase() === 'cancelled';
 
-            return (
-              <div 
-                key={order.order_id} 
-                style={{
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '8px',
-                  padding: '15px',
-                  backgroundColor: '#f8fafc'
-                }}
-              >
-                {/* Master Order Strip */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
-                  <div>
-                    <strong>Order Ref:</strong> #{order.order_id} <br />
-                    <span style={{ fontSize: '13px', color: '#64748b' }}>Date: {order.order_date || 'N/A'}</span>
-                  </div>
-                  <div>
-                    <strong>Total Amount:</strong> ₹{displayTotal}
-                  </div>
-                  <div>
-                    <strong>Status:</strong> <span style={{
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                      backgroundColor: order.order_status?.toLowerCase() === 'cancelled' ? '#fee2e2' : '#dcfce7',
-                      color: order.order_status?.toLowerCase() === 'cancelled' ? '#ef4444' : '#15803d'
-                    }}>{order.order_status || 'Pending'}</span>
-                  </div>
-                  <div>
-                    <button 
-                      onClick={() => toggleOrderExpansion(order.order_id)}
-                      style={{ padding: '6px 12px', cursor: 'pointer', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '4px', fontWeight: '500' }}
-                    >
-                      {fetchingDetails[order.order_id] ? 'Loading Metrics...' : isExpanded ? 'Hide Items' : 'Track & View Details'}
-                    </button>
-                  </div>
+          return (
+            <div key={orderId} className="card-surface overflow-hidden">
+              {/* ── Order summary row ── */}
+              <div className="flex flex-wrap items-center justify-between gap-4 p-5 sm:p-6">
+                {/* Left — ID + date */}
+                <div>
+                  <p className="text-sm font-bold text-ink-950">
+                    Order #{orderId}
+                  </p>
+                  <p className="mt-0.5 text-xs text-ink-400">
+                    {order.order_date || 'Date unavailable'}
+                  </p>
                 </div>
 
-                {/* Sub-Itemized Layout (Triggered via Postman response payload structural mapping) */}
-                {isExpanded && (
-                  <div style={{ marginTop: '15px', padding: '15px', backgroundColor: '#ffffff', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                    <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#334155' }}>Line Items Profile</h4>
-                    {items.length === 0 ? (
-                      <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>No details returned for this transaction bundle.</p>
-                    ) : (
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
-                        <thead>
-                          <tr style={{ borderBottom: '1px solid #cbd5e1', color: '#475569' }}>
-                            <th style={{ padding: '6px 0', width: '90px' }}>Preview</th>
-                            <th>Product Asset Name</th>
-                            <th>Quantity</th>
-                            <th>Unit Pricing</th>
-                            <th>Subtotal</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {items.map((item, idx) => {
-                            // 🟢 MAP ATTRIBUTES DIRECTLY TO POSTMAN BACKEND LOG CODES
-                            const productName = item.product_name || 'Unknown Product Asset';
-                            const imageUrl = item.product_image;
-                            const qty = parseInt(item.product_qty || 1, 10);
-                            const price = parseFloat(item.product_price || 0);
-                            
-                            // Support safe parsing fallback for key variations ("sub total" vs "sub_total")
-                            const subtotalValue = item["sub total"] || item["sub_total"] || (price * qty);
+                {/* Centre — amount */}
+                <div className="text-center">
+                  <p className="text-xs text-ink-400">Total</p>
+                  <p className="mt-0.5 text-base font-black text-ink-950">
+                    {formatPrice(displayTotal)}
+                  </p>
+                </div>
 
-                            return (
-                              <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle' }}>
-                                {/* 🟢 NEW: Product Image Thumbnail View column rendering */}
-                                <td style={{ padding: '8px 0' }}>
-                                  {imageUrl ? (
-                                    <img 
-                                      src={imageUrl} 
-                                      alt={productName} 
-                                      style={{ width: '60px', height: '60px', objectFit: 'contain', borderRadius: '4px', border: '1px solid #e2e8f0' }}
-                                      onError={(e) => { e.target.style.display = 'none'; }} // Fallback if image path is broken
-                                    />
-                                  ) : (
-                                    <div style={{ width: '60px', height: '60px', backgroundColor: '#f1f5f9', borderRadius: '4px' }} />
-                                  )}
-                                </td>
-                                <td style={{ padding: '8px 4px', fontWeight: '500', color: '#1e293b', maxWidth: '350px' }}>
-                                  {productName}
-                                </td>
-                                <td style={{ color: '#334155', padding: '8px 4px' }}>{qty}</td>
-                                <td style={{ color: '#334155', padding: '8px 4px' }}>₹{price.toLocaleString('en-IN')}</td>
-                                <td style={{ fontWeight: '600', color: '#0f172a', padding: '8px 4px' }}>
-                                  ₹{parseFloat(subtotalValue).toLocaleString('en-IN')}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    )}
+                {/* Status badge */}
+                <StatusBadge status={order.order_status} />
 
-                    {/* Operational Cancel Flow */}
-                    {order.order_status?.toLowerCase() !== 'cancelled' && (
-                      <div style={{ marginTop: '20px', paddingTop: '15px', borderTop: '1px dashed #e2e8f0', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                        <input 
-                          type="text" 
-                          placeholder="Provide cancellation justification..."
-                          value={cancelReasons[order.order_id] || ''}
-                          onChange={(e) => handleReasonTextChange(order.order_id, e.target.value)}
-                          style={{ flex: '1', minWidth: '200px', padding: '6px 10px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
-                        />
-                        <button 
-                          onClick={() => handleCancelTransaction(order.order_id)}
-                          style={{ padding: '7px 14px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: '600', cursor: 'pointer' }}
-                        >
-                          Cancel Order
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                {/* Expand button */}
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => toggleOrderExpansion(orderId)}
+                  loading={isFetching}
+                >
+                  {isFetching
+                    ? 'Loading…'
+                    : isExpanded
+                    ? 'Hide items'
+                    : 'View items'}
+                  {!isFetching && (
+                    <svg
+                      className={`ml-1 inline h-3.5 w-3.5 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  )}
+                </Button>
               </div>
-            );
-          })}
-        </div>
-      )}
+
+              {/* ── Expanded: line items ── */}
+              {isExpanded && (
+                <div className="border-t border-ink-100 bg-surface-100 px-5 py-5 sm:px-6">
+                  <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-ink-400">
+                    Items in this order
+                  </p>
+
+                  {items.length === 0 ? (
+                    <p className="text-sm text-ink-400">No item details available.</p>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      {items.map((item, idx) => {
+                        const productName  = item.product_name || 'Unknown product';
+                        const imageUrl     = item.product_image;
+                        const qty          = parseInt(item.product_qty || 1, 10);
+                        const price        = parseFloat(item.product_price || 0);
+                        const subtotal     = item['sub total'] || item.sub_total || price * qty;
+
+                        return (
+                          <div
+                            key={idx}
+                            className="flex items-center gap-4 rounded-xl border border-ink-100 bg-white p-3"
+                          >
+                            {/* Thumbnail */}
+                            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-ink-100 bg-surface-100">
+                              {imageUrl ? (
+                                <img
+                                  src={imageUrl}
+                                  alt={productName}
+                                  className="h-full w-full object-contain p-1"
+                                  onError={(e) => { e.target.style.display = 'none'; }}
+                                />
+                              ) : (
+                                <div className="h-full w-full" />
+                              )}
+                            </div>
+
+                            {/* Name + qty */}
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold text-ink-950">
+                                {productName}
+                              </p>
+                              <p className="mt-0.5 text-xs text-ink-400">
+                                Qty: {qty} × {formatPrice(price)}
+                              </p>
+                            </div>
+
+                            {/* Subtotal */}
+                            <p className="shrink-0 text-sm font-black text-ink-950">
+                              {formatPrice(subtotal)}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* ── Cancel section ── */}
+                  {!isCancelled && (
+                    <div className="mt-5 border-t border-ink-100 pt-5">
+                      <p className="mb-2 text-xs font-semibold text-ink-500">
+                        Need to cancel?
+                      </p>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <input
+                          type="text"
+                          placeholder="Reason for cancellation"
+                          value={cancelReasons[orderId] || ''}
+                          onChange={(e) =>
+                            setCancelReasons((prev) => ({
+                              ...prev,
+                              [orderId]: e.target.value,
+                            }))
+                          }
+                          className="field flex-1"
+                          style={{ minWidth: 200 }}
+                        />
+                        {confirmCancel[orderId] ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-ink-500">Are you sure?</span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              loading={isCancelling}
+                              onClick={() => handleCancelOrder(orderId)}
+                              className="border-red-200 text-red-600 hover:bg-red-50"
+                            >
+                              Yes, cancel
+                            </Button>
+                            <button
+                              onClick={() => setConfirmCancel((prev) => ({ ...prev, [orderId]: false }))}
+                              className="text-xs font-medium text-ink-400 hover:text-ink-600"
+                            >
+                              Keep order
+                            </button>
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            loading={isCancelling}
+                            onClick={() => handleCancelOrder(orderId)}
+                            disabled={!cancelReasons[orderId]?.trim()}
+                            className="border-red-200 text-red-600 hover:bg-red-50"
+                          >
+                            {isCancelling ? 'Cancelling…' : 'Cancel order'}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   );
 };
