@@ -203,7 +203,7 @@ const Layout = ({ isLoggedIn, userData, handleLogout, searchQuery, setSearchQuer
             <div className="mt-3 grid gap-2 text-sm text-ink-500">
               <span>Secure checkout</span>
               <span>30-day returns</span>
-              <span>support@swiftcart.com</span>
+              <span>swiftcartsupport2026@gmail.com</span>
               <a
                 href="https://wa.me/918128698935"
                 target="_blank"

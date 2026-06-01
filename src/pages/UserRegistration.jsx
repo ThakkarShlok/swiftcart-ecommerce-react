@@ -1,7 +1,7 @@
-// src/UserRegistration.jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import Button from '../components/ui/Button';
 import { getApiUrl, authHeaders, API_TOKEN } from '../api/apiConfig';
 
 const UserRegistration = ({ onRegisterSuccess }) => {
@@ -10,15 +10,14 @@ const UserRegistration = ({ onRegisterSuccess }) => {
   const [password, setPassword] = useState('');
   const [mobile, setMobile] = useState('');
   const [loading, setLoading] = useState(false);
-  
-  const navigate = useNavigate();
-  const REGISTER_URL = getApiUrl('api-user-register.php');
 
-  const handleRegisterSubmit = async (e) => {
-    e.preventDefault();
-    
+  const navigate = useNavigate();
+
+  const handleRegisterSubmit = async (event) => {
+    event.preventDefault();
+
     if (!name || !email || !password || !mobile) {
-      alert("Please fill in all fields.");
+      alert('Please fill in all fields.');
       return;
     }
 
@@ -30,104 +29,69 @@ const UserRegistration = ({ onRegisterSuccess }) => {
       dataPayload.append('user_password', password);
       dataPayload.append('user_mobile', mobile);
 
-      const res = await axios.post(REGISTER_URL, dataPayload, {
-        headers: authHeaders(API_TOKEN)
+      const res = await axios.post(getApiUrl('api-user-register.php'), dataPayload, {
+        headers: authHeaders(API_TOKEN),
       });
 
-      if (String(res.data.flag) === "1" || res.data.flag == 1) {
-        alert(res.data.message || "Account created successfully!");
-        if (onRegisterSuccess) {
-          onRegisterSuccess(); // Redirects to login page
-        } else {
-          navigate('/login');
-        }
+      if (String(res.data.flag) === '1' || res.data.flag == 1) {
+        alert(res.data.message || 'Account created successfully.');
+        if (onRegisterSuccess) onRegisterSuccess();
+        else navigate('/login');
       } else {
-        alert(res.data.message || "Failed to create account. Please try again.");
+        alert(res.data.message || 'Failed to create account. Please try again.');
       }
     } catch (err) {
-      console.error("Registration error:", err);
-      alert("Something went wrong. Please check your network.");
+      console.error('Registration error:', err);
+      alert('Something went wrong. Please check your network.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: "400px", margin: "50px auto", padding: "30px", border: "1px solid #ddd", borderRadius: "8px", fontFamily: "Arial, sans-serif" }}>
-      <h3 style={{ fontSize: "24px", fontWeight: "normal", margin: "0 0 20px 0" }}>Create account</h3>
-      
-      <form onSubmit={handleRegisterSubmit}>
-        {/* Your Name Input */}
-        <div style={{ marginBottom: "15px" }}>
-          <label style={{ display: "block", fontSize: "13px", fontWeight: "bold", marginBottom: "5px" }}>Your name</label>
-          <input 
-            type="text" 
-            value={name} 
-            onChange={(e) => setName(e.target.value)} 
-            placeholder="First and last name"
-            style={{ width: "100%", boxSizing: "border-box", padding: "8px", borderRadius: "4px", border: "1px solid #a6a6a6", fontSize: "14px" }} 
-            required 
-          />
+    <div className="bg-gradient-to-br from-sapphire-50 via-white to-copper-50">
+      <div className="container-custom py-16">
+      <div className="card-surface mx-auto max-w-md border-white/70 p-8 shadow-soft">
+        <div className="mb-6 text-center">
+          <p className="eyebrow">Create account</p>
+          <h1 className="mt-3 text-3xl font-black text-ink-950">Welcome to SwiftCart</h1>
+          <p className="mt-2 text-sm text-ink-500">Start shopping faster with your account.</p>
         </div>
 
-        {/* Mobile Number Input */}
-        <div style={{ marginBottom: "15px" }}>
-          <label style={{ display: "block", fontSize: "13px", fontWeight: "bold", marginBottom: "5px" }}>Mobile number</label>
-          <div style={{ display: "flex", gap: "5px" }}>
-            <span style={{ padding: "8px 10px", backgroundColor: "#f0f2f2", border: "1px solid #a6a6a6", borderRadius: "4px", fontSize: "14px", color: "#565959" }}>+91</span>
-            <input 
-              type="tel" 
-              maxLength="10"
-              value={mobile} 
-              onChange={(e) => setMobile(e.target.value.replace(/\D/g, ''))} // Numbers only
-              placeholder="10-digit mobile number"
-              style={{ flex: 1, padding: "8px", borderRadius: "4px", border: "1px solid #a6a6a6", fontSize: "14px" }} 
-              required 
-            />
-          </div>
+        <form onSubmit={handleRegisterSubmit} className="space-y-5">
+          <label className="block text-sm font-bold text-ink-700">
+            Full name
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="First and last name" className="field mt-2" required />
+          </label>
+
+          <label className="block text-sm font-bold text-ink-700">
+            Mobile number
+            <div className="mt-2 flex gap-3">
+              <span className="inline-flex items-center rounded-2xl border border-ink-100 bg-surface-100 px-4 text-sm font-bold text-ink-600">+91</span>
+              <input type="tel" maxLength={10} value={mobile} onChange={(e) => setMobile(e.target.value.replace(/\D/g, ''))} placeholder="10-digit mobile number" className="field" required />
+            </div>
+          </label>
+
+          <label className="block text-sm font-bold text-ink-700">
+            Email address
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="field mt-2" required />
+          </label>
+
+          <label className="block text-sm font-bold text-ink-700">
+            Password
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" className="field mt-2" required />
+          </label>
+
+          <Button type="submit" fullWidth size="lg" loading={loading}>
+            {loading ? 'Creating account...' : 'Get started'}
+          </Button>
+        </form>
+
+        <div className="mt-6 border-t border-ink-100 pt-6 text-center text-sm text-ink-500">
+          <span>Already have an account? </span>
+          <Link to="/login" className="font-bold text-ink-950 hover:text-copper-700">Sign in</Link>
         </div>
-
-        {/* Email Input */}
-        <div style={{ marginBottom: "15px" }}>
-          <label style={{ display: "block", fontSize: "13px", fontWeight: "bold", marginBottom: "5px" }}>Email (optional)</label>
-          <input 
-            type="email" 
-            value={email} 
-            onChange={(e) => setEmail(e.target.value)} 
-            style={{ width: "100%", boxSizing: "border-box", padding: "8px", borderRadius: "4px", border: "1px solid #a6a6a6", fontSize: "14px" }} 
-            required 
-          />
-        </div>
-
-        {/* Password Input */}
-        <div style={{ marginBottom: "20px" }}>
-          <label style={{ display: "block", fontSize: "13px", fontWeight: "bold", marginBottom: "5px" }}>Password</label>
-          <input 
-            type="password" 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            placeholder="At least 6 characters"
-            style={{ width: "100%", boxSizing: "border-box", padding: "8px", borderRadius: "4px", border: "1px solid #a6a6a6", fontSize: "14px" }} 
-            required 
-          />
-        </div>
-
-        {/* Submit Button */}
-        <button 
-          type="submit" 
-          disabled={loading}
-          style={{ width: "100%", padding: "10px", backgroundColor: "#ffd814", borderColor: "#fcd200", color: "#0f1111", border: "1px solid", borderRadius: "8px", cursor: "pointer", fontSize: "14px", fontWeight: "500" }}
-        >
-          {loading ? "Creating Account..." : "Verify mobile number"}
-        </button>
-      </form>
-
-      {/* Already have an account text link */}
-      <div style={{ marginTop: "20px", borderTop: "1px solid #eee", paddingTop: "15px", fontSize: "13px" }}>
-        <span>Already have an account? </span>
-        <Link to="/login" style={{ color: "#007185", textDecoration: "none" }}>
-          Sign in →
-        </Link>
+      </div>
       </div>
     </div>
   );

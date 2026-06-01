@@ -40,7 +40,7 @@ Store policies:
 - Free shipping on orders above ₹999
 - 30-day easy returns
 - Secure checkout with encrypted payments
-- Support email: support@swiftcart.com
+- Support email: swiftcartsupport2026@gmail.com
 
 Current product catalogue:
 ${catalogue}`;

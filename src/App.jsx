@@ -21,11 +21,9 @@ import LoginWithOtp from './pages/LoginWithOtp';
 import VerifyOtp from './pages/VerifyOtp';
 import NotFound from './pages/NotFound';
 import Layout from './components/Layout';
-import { ToastContainer, useToast } from './components/ui/Toast';
 
 function App() {
   const [products, setProducts] = useState([]);
-  const { toasts, addToast, removeToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -40,7 +38,8 @@ function App() {
     const storedName = localStorage.getItem('stored_user_name');
     if (storedId) {
       setIsLoggedIn(true);
-      setUserData({ user_id: storedId, user_name: storedName || 'Customer' });
+      const storedEmail = localStorage.getItem('stored_user_email') || '';
+      setUserData({ user_id: storedId, user_name: storedName || 'Customer', user_email: storedEmail });
     }
   }, []);
 
@@ -73,7 +72,7 @@ function App() {
 
   const handleAddToCartBackend = async (product) => {
     if (!isLoggedIn || !userData?.user_id) {
-      addToast('Please sign in to add items to your cart.', 'warning');
+      alert("Please login first to manage your cart.");
       navigate('/login');
       return;
     }
@@ -89,9 +88,9 @@ function App() {
       });
 
       if (res.data.flag == "1" || res.data.flag == 1) {
-        addToast(res.data.message || 'Item added to your cart!', 'success');
+        alert(res.data.message || "Item added to your cart!");
       } else {
-        addToast(res.data.message || 'Could not add item to cart.', 'error');
+        alert(res.data.message || "Could not complete cart action.");
       }
     } catch (err) {
       console.error("Cart error:", err);
@@ -103,6 +102,7 @@ function App() {
     setUserData(null);
     localStorage.removeItem('stored_user_id');
     localStorage.removeItem('stored_user_name');
+    localStorage.removeItem('stored_user_email');
     localStorage.removeItem('user_id');
     localStorage.removeItem('user_name');
     navigate('/');
@@ -128,7 +128,7 @@ function App() {
   : <Navigate to="/" replace />
 } />
             <Route path="wishlist" element={<WishlistView token={API_TOKEN} isLoggedIn={isLoggedIn} />} />
-            <Route path="checkout" element={isLoggedIn ? <CheckoutView isLoggedIn={isLoggedIn} userId={userData?.user_id} /> : <Navigate to="/" replace />} />
+            <Route path="checkout" element={isLoggedIn ? <CheckoutView isLoggedIn={isLoggedIn} userId={userData?.user_id} userEmail={userData?.user_email || ''} /> : <Navigate to="/" replace />} />
             <Route path="orders" element={isLoggedIn ? <OrdersView token={API_TOKEN} isLoggedIn={isLoggedIn} userId={userData?.user_id} /> : <Navigate to="/" replace />} />
             <Route path="categories" element={<CategoryList onViewSubcategory={(catId) => navigate(`/subcategories?category=${catId}`)} />} />
             <Route path="subcategories" element={<SubcategoryList onSubcategoryClick={() => navigate('/')} />} />
@@ -142,7 +142,6 @@ function App() {
           </Route>
         </Routes>
       </main>
-      <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   );
 }
