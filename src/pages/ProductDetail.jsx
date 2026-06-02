@@ -275,6 +275,27 @@ const ProductDetail = ({ token = API_TOKEN, isLoggedIn, userId, onAddToCart }) =
     }
   };
 
+  const handleShare = async () => {
+    const name  = product?.product_name || 'Check out this product';
+    const price = product?.product_price || product?.price || '';
+    const url   = window.location.href;
+    const text  = price
+      ? `${name} — ₹${Number(price).toLocaleString('en-IN')} on SwiftCart`
+      : `${name} on SwiftCart`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: name, text, url });
+      } catch (err) {
+        if (err.name !== 'AbortError') console.error('Share failed:', err);
+      }
+      return;
+    }
+
+    const waText = encodeURIComponent(text + '\n' + url);
+    window.open('https://wa.me/?text=' + waText, '_blank', 'noopener,noreferrer');
+  };
+
   const handleAddToCart = async () => {
     const activeUserId = getUserId();
     if (!activeUserId) {
@@ -364,6 +385,17 @@ const ProductDetail = ({ token = API_TOKEN, isLoggedIn, userId, onAddToCart }) =
             <Button variant="secondary" size="lg" onClick={handleAddToWishlist}>Add to wishlist</Button>
           </div>
           {!isLoggedIn && <p className="mt-3 text-sm font-medium text-copper-700">Sign in to add this product to your cart or wishlist.</p>}
+
+          <button
+            onClick={handleShare}
+            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-ink-100 bg-white py-2.5 text-sm font-semibold text-ink-600 transition hover:border-copper-100 hover:bg-copper-50 hover:text-copper-700 focus:outline-none focus:ring-4 focus:ring-copper-500/20"
+            aria-label="Share this product"
+          >
+            <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            {navigator.share ? 'Share this product' : 'Share on WhatsApp'}
+          </button>
 
           <div className="mt-6 grid gap-3 rounded-xl border border-ink-100 p-4 text-sm text-ink-500">
             <p><span className="font-bold text-ink-950">Stock:</span> {stock}</p>
