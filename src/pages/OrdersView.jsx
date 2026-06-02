@@ -25,6 +25,191 @@ const StatusBadge = ({ status }) => {
   );
 };
 
+// ── Invoice generator ────────────────────────────────────────────────────────
+const generateInvoice = async (order, items, computedTotal) => {
+  // Dynamically import jsPDF — no bundle cost unless user clicks download
+  const { jsPDF } = await import('jspdf');
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+  const PAGE_W   = 210;
+  const MARGIN   = 18;
+  const COL_R    = PAGE_W - MARGIN; // right edge
+  const GREEN    = [0, 135, 90];    // copper-500 = #00875A
+  const INK_950  = [15, 20, 29];    // ink-950
+  const INK_400  = [161, 161, 170]; // ink-400
+  const SURF     = [244, 244, 245]; // surface-100
+
+  // ── Header bar ──────────────────────────────────────────────────────────
+  doc.setFillColor(...GREEN);
+  doc.rect(0, 0, PAGE_W, 28, 'F');
+
+  // Logo text
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.setTextColor(255, 255, 255);
+  doc.text('SwiftCart', MARGIN, 17);
+
+  // "TAX INVOICE" tag top-right
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.text('TAX INVOICE', COL_R, 12, { align: 'right' });
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`Order #${order.order_id}`, COL_R, 20, { align: 'right' });
+
+  // ── Invoice meta block ───────────────────────────────────────────────────
+  let y = 38;
+  doc.setTextColor(...INK_950);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Invoice details', MARGIN, y);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...INK_400);
+  y += 6;
+  doc.text(`Date: ${order.order_date || new Date().toLocaleDateString('en-IN')}`, MARGIN, y);
+  y += 5;
+  doc.text(`Status: ${order.order_status || 'Pending'}`, MARGIN, y);
+
+  // ── Store address (right column) ─────────────────────────────────────────
+  doc.setTextColor(...INK_950);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.text('SwiftCart', COL_R, 38, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...INK_400);
+  doc.text('A-1705 Mondeal Heights, Satellite', COL_R, 44, { align: 'right' });
+  doc.text('Ahmedabad, Gujarat - 380015', COL_R, 49, { align: 'right' });
+  doc.text('swiftcartsupport2026@gmail.com', COL_R, 54, { align: 'right' });
+  doc.text('+91 81286 98935', COL_R, 59, { align: 'right' });
+
+  // ── Divider ──────────────────────────────────────────────────────────────
+  y = 68;
+  doc.setDrawColor(228, 228, 231);
+  doc.setLineWidth(0.4);
+  doc.line(MARGIN, y, COL_R, y);
+
+  // ── Items table header ───────────────────────────────────────────────────
+  y += 8;
+  doc.setFillColor(...SURF);
+  doc.rect(MARGIN, y - 5, COL_R - MARGIN, 10, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(...INK_950);
+  const C1 = MARGIN + 2;   // Product
+  const C2 = 115;           // Qty
+  const C3 = 140;           // Unit price
+  const C4 = COL_R;         // Subtotal
+
+  doc.text('Product', C1, y + 1);
+  doc.text('Qty', C2, y + 1);
+  doc.text('Unit price', C3, y + 1);
+  doc.text('Subtotal', C4, y + 1, { align: 'right' });
+  y += 10;
+
+  // ── Items rows ───────────────────────────────────────────────────────────
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  let subtotalSum = 0;
+
+  items.forEach((item, idx) => {
+    const name     = item.product_name || 'Product';
+    const qty      = parseInt(item.product_qty || 1, 10);
+    const price    = parseFloat(item.product_price || 0);
+    const sub      = parseFloat(item['sub total'] || item.sub_total || price * qty);
+    subtotalSum   += sub;
+
+    // Zebra row
+    if (idx % 2 === 0) {
+      doc.setFillColor(250, 250, 250);
+      doc.rect(MARGIN, y - 5, COL_R - MARGIN, 9, 'F');
+    }
+
+    doc.setTextColor(...INK_950);
+    // Truncate long product names
+    const shortName = name.length > 45 ? name.substring(0, 42) + '...' : name;
+    doc.text(shortName, C1, y);
+    doc.setTextColor(...INK_400);
+    doc.text(String(qty), C2, y);
+    doc.text(`Rs.${price.toLocaleString('en-IN')}`, C3, y);
+    doc.setTextColor(...INK_950);
+    doc.text(`Rs.${sub.toLocaleString('en-IN')}`, C4, y, { align: 'right' });
+    y += 9;
+
+    // Page break guard
+    if (y > 260) {
+      doc.addPage();
+      y = 20;
+    }
+  });
+
+  // ── Totals block ─────────────────────────────────────────────────────────
+  y += 4;
+  doc.setDrawColor(228, 228, 231);
+  doc.line(MARGIN, y, COL_R, y);
+  y += 8;
+
+  const finalTotal = computedTotal > 0 ? computedTotal : subtotalSum;
+  const shipping   = finalTotal > 999 ? 0 : 100;
+  const grandTotal = finalTotal + shipping;
+
+  const totalsX = 130;
+  doc.setFontSize(8.5);
+
+  // Subtotal row
+  doc.setTextColor(...INK_400);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Subtotal', totalsX, y);
+  doc.setTextColor(...INK_950);
+  doc.text(`Rs.${finalTotal.toLocaleString('en-IN')}`, COL_R, y, { align: 'right' });
+  y += 7;
+
+  // Shipping row
+  doc.setTextColor(...INK_400);
+  doc.text(`Shipping ${shipping === 0 ? '(Free above Rs.999)' : ''}`, totalsX, y);
+  doc.setTextColor(...INK_950);
+  doc.text(shipping === 0 ? 'Free' : `Rs.${shipping}`, COL_R, y, { align: 'right' });
+  y += 7;
+
+  // Grand total row
+  doc.setFillColor(...GREEN);
+  doc.rect(totalsX - 4, y - 5, COL_R - totalsX + 4 + MARGIN, 11, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9.5);
+  doc.text('Total', totalsX, y + 2);
+  doc.text(`Rs.${grandTotal.toLocaleString('en-IN')}`, COL_R, y + 2, { align: 'right' });
+  y += 18;
+
+  // ── Policies footer ───────────────────────────────────────────────────────
+  doc.setDrawColor(228, 228, 231);
+  doc.line(MARGIN, y, COL_R, y);
+  y += 8;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...INK_400);
+  doc.text('Thank you for shopping with SwiftCart!', MARGIN, y);
+  y += 5;
+  doc.text('Free shipping on orders above Rs.999  ·  30-day easy returns  ·  Secure checkout', MARGIN, y);
+  y += 5;
+  doc.text('For support: swiftcartsupport2026@gmail.com  ·  +91 81286 98935', MARGIN, y);
+
+  // ── Page number ───────────────────────────────────────────────────────────
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7);
+    doc.setTextColor(...INK_400);
+    doc.text(
+      `Page ${i} of ${pageCount}  ·  SwiftCart Invoice  ·  Order #${order.order_id}`,
+      PAGE_W / 2, 290, { align: 'center' }
+    );
+  }
+
+  doc.save(`SwiftCart-Invoice-${order.order_id}.pdf`);
+};
+
 const OrdersView = ({ token, isLoggedIn, userId }) => {
   const [orders, setOrders]                     = useState([]);
   const [loading, setLoading]                   = useState(false);
@@ -33,6 +218,8 @@ const OrdersView = ({ token, isLoggedIn, userId }) => {
   const [cancelReasons, setCancelReasons]       = useState({});
   const [cancelling, setCancelling]             = useState({});
   const [confirmCancel, setConfirmCancel]       = useState({});
+  const [orderTotals, setOrderTotals]           = useState({});
+  const [downloadingInvoice, setDownloadingInvoice] = useState({});
 
   const navigate = useNavigate();
   const { toasts, addToast, removeToast } = useToast();
@@ -84,10 +271,20 @@ const OrdersView = ({ token, isLoggedIn, userId }) => {
         headers: authHeaders(token),
       });
       if (res.data && String(res.data.flag) === '1') {
-        setSelectedOrderDetails((prev) => ({
-          ...prev,
-          [orderId]: res.data.order_details || [],
-        }));
+        const details = res.data.order_details || [];
+        setSelectedOrderDetails((prev) => ({ ...prev, [orderId]: details }));
+
+        // Compute total from line items — api-list-order.php often returns
+        // order_total as 0 or null, so we calculate it from the detail items
+        const computed = details.reduce((sum, item) => {
+          const price = parseFloat(item.product_price || 0);
+          const qty   = parseInt(item.product_qty || 1, 10);
+          const sub   = parseFloat(item['sub total'] || item.sub_total || 0);
+          return sum + (sub > 0 ? sub : price * qty);
+        }, 0);
+        if (computed > 0) {
+          setOrderTotals((prev) => ({ ...prev, [orderId]: computed }));
+        }
       }
     } catch (err) {
       console.error('Order details fetch error:', err);
@@ -125,6 +322,55 @@ const OrdersView = ({ token, isLoggedIn, userId }) => {
       console.error('Cancel order error:', err);
     } finally {
       setCancelling((prev) => ({ ...prev, [orderId]: false }));
+    }
+  };
+
+  const handleDownloadInvoice = async (order) => {
+    const orderId = order.order_id;
+    const items   = selectedOrderDetails[orderId];
+
+    // If items not loaded yet, fetch them first then download
+    if (!items || items.length === 0) {
+      setDownloadingInvoice((prev) => ({ ...prev, [orderId]: true }));
+      try {
+        const payload = new FormData();
+        payload.append('user_id', userId);
+        payload.append('order_id', orderId);
+        const res = await axios.post(getApiUrl('api-list-order-detail.php'), payload, {
+          headers: authHeaders(token),
+        });
+        if (res.data && String(res.data.flag) === '1') {
+          const details = res.data.order_details || [];
+          setSelectedOrderDetails((prev) => ({ ...prev, [orderId]: details }));
+          const computed = details.reduce((sum, item) => {
+            const price = parseFloat(item.product_price || 0);
+            const qty   = parseInt(item.product_qty || 1, 10);
+            const sub   = parseFloat(item['sub total'] || item.sub_total || 0);
+            return sum + (sub > 0 ? sub : price * qty);
+          }, 0);
+          setOrderTotals((prev) => ({ ...prev, [orderId]: computed }));
+          await generateInvoice(order, details, computed);
+        } else {
+          addToast('Could not load order details for invoice.', 'error');
+        }
+      } catch (err) {
+        console.error('Invoice fetch error:', err);
+        addToast('Failed to generate invoice.', 'error');
+      } finally {
+        setDownloadingInvoice((prev) => ({ ...prev, [orderId]: false }));
+      }
+      return;
+    }
+
+    // Items already loaded — generate directly
+    setDownloadingInvoice((prev) => ({ ...prev, [orderId]: true }));
+    try {
+      await generateInvoice(order, items, orderTotals[orderId] || 0);
+    } catch (err) {
+      console.error('Invoice generation error:', err);
+      addToast('Failed to generate invoice.', 'error');
+    } finally {
+      setDownloadingInvoice((prev) => ({ ...prev, [orderId]: false }));
     }
   };
 
@@ -194,7 +440,9 @@ const OrdersView = ({ token, isLoggedIn, userId }) => {
           const isFetching   = !!fetchingDetails[orderId];
           const isCancelling = !!cancelling[orderId];
           const items        = selectedOrderDetails[orderId] || [];
-          const displayTotal = order.order_total || order.order_amount || '0.00';
+          const apiTotal      = parseFloat(order.order_total || order.order_amount || 0);
+          const computedTotal = orderTotals[orderId] || 0;
+          const displayTotal  = apiTotal > 0 ? apiTotal : computedTotal > 0 ? computedTotal : null;
           const isCancelled  = order.order_status?.toLowerCase() === 'cancelled';
 
           return (
@@ -215,7 +463,10 @@ const OrdersView = ({ token, isLoggedIn, userId }) => {
                 <div className="text-center">
                   <p className="text-xs text-ink-400">Total</p>
                   <p className="mt-0.5 text-base font-black text-ink-950">
-                    {formatPrice(displayTotal)}
+                    {displayTotal !== null
+                      ? formatPrice(displayTotal)
+                      : <span className="text-sm font-normal text-ink-400">Expand to view</span>
+                    }
                   </p>
                 </div>
 
@@ -244,6 +495,35 @@ const OrdersView = ({ token, isLoggedIn, userId }) => {
                     </svg>
                   )}
                 </Button>
+              </div>
+
+              {/* ── Invoice strip — always visible, full width, clearly separated ── */}
+              <div className="flex items-center justify-between gap-3 border-t border-ink-100 bg-surface-100 px-5 py-3 sm:px-6">
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-ink-500">
+                    Need a record of this order?
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleDownloadInvoice(order)}
+                  disabled={!!downloadingInvoice[orderId]}
+                  aria-label={`Download invoice for order ${orderId}`}
+                  className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-ink-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-copper-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {downloadingInvoice[orderId] ? (
+                    <>
+                      <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Generating…
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                      </svg>
+                      Download invoice
+                    </>
+                  )}
+                </button>
               </div>
 
               {/* ── Expanded: line items ── */}

@@ -84,6 +84,119 @@ const CheckoutView = ({ isLoggedIn, userId, userEmail }) => {
     }
   };
 
+  const [downloadingInvoice, setDownloadingInvoice] = useState(false);
+
+  const generateCheckoutInvoice = async () => {
+    setDownloadingInvoice(true);
+    try {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+      const PAGE_W  = 210;
+      const MARGIN  = 18;
+      const COL_R   = PAGE_W - MARGIN;
+      const GREEN   = [0, 135, 90];
+      const INK_950 = [15, 20, 29];
+      const INK_400 = [161, 161, 170];
+      const SURF    = [244, 244, 245];
+
+      // Header
+      doc.setFillColor(...GREEN);
+      doc.rect(0, 0, PAGE_W, 28, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.setTextColor(255, 255, 255);
+      doc.text('SwiftCart', MARGIN, 17);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('ORDER CONFIRMATION', COL_R, 12, { align: 'right' });
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      if (orderRef) {
+        doc.text(`Order #${orderRef}`, COL_R, 20, { align: 'right' });
+      }
+
+      // Order details
+      let y = 40;
+      doc.setTextColor(...INK_950);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Delivery details', MARGIN, y);
+      y += 7;
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...INK_400);
+      const details = [
+        ['Name', shippingName],
+        ['Mobile', shippingMobile],
+        ['Address', shippingAddress],
+        ['Payment', paymentMethod],
+        ['Date', new Date().toLocaleDateString('en-IN')],
+      ];
+      details.forEach(([label, val]) => {
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...INK_950);
+        doc.text(`${label}:`, MARGIN, y);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...INK_400);
+        doc.text(String(val || 'N/A'), MARGIN + 28, y);
+        y += 7;
+      });
+
+      // Store info right column
+      doc.setTextColor(...INK_950);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text('SwiftCart', COL_R, 40, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...INK_400);
+      doc.text('A-1705 Mondeal Heights, Satellite', COL_R, 47, { align: 'right' });
+      doc.text('Ahmedabad, Gujarat - 380015', COL_R, 54, { align: 'right' });
+      doc.text('swiftcartsupport2026@gmail.com', COL_R, 61, { align: 'right' });
+
+      // Divider
+      y = Math.max(y + 4, 78);
+      doc.setDrawColor(228, 228, 231);
+      doc.setLineWidth(0.4);
+      doc.line(MARGIN, y, COL_R, y);
+      y += 12;
+
+      // Policies footer
+      doc.setFillColor(...SURF);
+      doc.rect(MARGIN, y - 5, COL_R - MARGIN, 28, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(...INK_950);
+      doc.text('What happens next?', MARGIN + 4, y + 2);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...INK_400);
+      doc.text('1. We will confirm your order within 24 hours.', MARGIN + 4, y + 10);
+      doc.text('2. You will receive a shipping notification once dispatched.', MARGIN + 4, y + 17);
+      y += 36;
+
+      // Footer
+      doc.setDrawColor(228, 228, 231);
+      doc.line(MARGIN, y, COL_R, y);
+      y += 8;
+      doc.setFontSize(7.5);
+      doc.setTextColor(...INK_400);
+      doc.text('Thank you for shopping with SwiftCart!  ·  Free shipping above Rs.999  ·  30-day returns', MARGIN, y);
+      y += 5;
+      doc.text('swiftcartsupport2026@gmail.com  ·  +91 81286 98935  ·  swiftcart.com', MARGIN, y);
+
+      doc.setFontSize(7);
+      const footerText = 'Page 1 of 1  ·  SwiftCart Order Confirmation' + (orderRef ? `  ·  Order #${orderRef}` : '');
+      doc.text(footerText, PAGE_W / 2, 290, { align: 'center' });
+
+      const invoiceFileName = orderRef ? 'SwiftCart-Order-' + orderRef + '.pdf' : 'SwiftCart-Order.pdf';
+      doc.save(invoiceFileName);
+    } catch (err) {
+      console.error('Checkout invoice error:', err);
+    } finally {
+      setDownloadingInvoice(false);
+    }
+  };
+
   const handlePlaceOrder = async (event) => {
     event.preventDefault();
 
@@ -174,6 +287,27 @@ const CheckoutView = ({ isLoggedIn, userId, userEmail }) => {
               </svg>
               Send order details on WhatsApp
             </a>
+
+            {/* Download invoice — inline on success screen */}
+            <button
+              onClick={generateCheckoutInvoice}
+              disabled={downloadingInvoice}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-ink-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-copper-600 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {downloadingInvoice ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Generating invoice…
+                </>
+              ) : (
+                <>
+                  <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                  </svg>
+                  Download order invoice
+                </>
+              )}
+            </button>
 
             <Button size="lg" fullWidth onClick={() => navigate('/orders')}>
               View my orders
