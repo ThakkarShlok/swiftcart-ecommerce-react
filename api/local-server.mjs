@@ -37,13 +37,17 @@ loadEnvFile(join(ROOT, '.env.local'));
 loadEnvFile(join(ROOT, '.env'));
 
 // ── Body parser ──────────────────────────────────────────────────────────────
+// Returns BOTH the parsed object and the raw string. The raw string is needed
+// by webhook handlers that verify an HMAC signature over the exact bytes sent.
 function readBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
     req.on('data', c => chunks.push(c));
     req.on('end', () => {
-      try { resolve(JSON.parse(Buffer.concat(chunks).toString() || '{}')); }
-      catch { resolve({}); }
+      const raw = Buffer.concat(chunks).toString() || '{}';
+      let parsed = {};
+      try { parsed = JSON.parse(raw); } catch { parsed = {}; }
+      resolve({ raw, parsed });
     });
     req.on('error', reject);
   });
@@ -71,8 +75,11 @@ const server = http.createServer(async (req, res) => {
   }
 
   try {
-    // Parse body and attach to req so handlers can read req.body
-    req.body = await readBody(req);
+    // Parse body and attach to req so handlers can read req.body.
+    // Also expose the raw string as req.rawBody for signature-verifying handlers.
+    const { raw, parsed } = await readBody(req);
+    req.body = parsed;
+    req.rawBody = raw;
 
     // Polyfill Express-style res.status(n).json(obj) on plain http.ServerResponse
     res.status = (code) => { res.statusCode = code; return res; };
@@ -97,5 +104,6 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`\n  Local API server → http://localhost:${PORT}/api/\n`);
   console.log('  RAZORPAY_KEY_ID:', process.env.RAZORPAY_KEY_ID ? '✓ set' : '✗ missing');
   console.log('  RAZORPAY_KEY_SECRET:', process.env.RAZORPAY_KEY_SECRET ? '✓ set' : '✗ missing');
+  console.log('  RAZORPAY_WEBHOOK_SECRET:', process.env.RAZORPAY_WEBHOOK_SECRET ? '✓ set' : '✗ missing (optional)');
   console.log('\n  Run "npm run dev" in a separate terminal, then open http://localhost:5173\n');
 });
