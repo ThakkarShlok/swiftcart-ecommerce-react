@@ -40,6 +40,11 @@ const CheckoutView = ({ isLoggedIn, userId, userEmail }) => {
   // CartView does: navigate('/checkout', { state: { total } })
   // This is safer than window.__swiftcartTotal which can be stale on refresh.
   const cartTotal = location.state?.total ?? window.__swiftcartTotal ?? 0;
+  // Optional itemized data for the confirmation email. Guarded everywhere so a
+  // missing value never breaks the order flow.
+  const cartItemsForEmail = Array.isArray(location.state?.items) ? location.state.items : [];
+  const cartSubtotal = Number(location.state?.subtotal ?? cartTotal) || 0;
+  const cartShipping = Number(location.state?.shipping ?? 0) || 0;
 
   const WHATSAPP_NUMBER = '918128698935';
 
@@ -89,6 +94,37 @@ const CheckoutView = ({ isLoggedIn, userId, userEmail }) => {
       console.warn('No user email available — skipping confirmation email.');
       return;
     }
+    // ── Build an itemized receipt for the email (all guarded) ──────────────
+    const formatINR = (n) =>
+      '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    // Plain-text rows as a fallback / for text templates
+    const itemsText = cartItemsForEmail.length
+      ? cartItemsForEmail
+          .map((it) => `${it.name}  ×${it.qty}  —  ${formatINR(it.price * it.qty)}`)
+          .join('\n')
+      : 'Order items will be confirmed shortly.';
+
+    // HTML rows for an attractive template (each row a styled <tr>)
+    const itemsHtml = cartItemsForEmail.length
+      ? cartItemsForEmail
+          .map(
+            (it) => `
+            <tr>
+              <td style="padding:12px 16px;border-bottom:1px solid #eef0f2;color:#0f141d;font-size:14px;">
+                ${it.name}
+              </td>
+              <td style="padding:12px 16px;border-bottom:1px solid #eef0f2;color:#697f9f;font-size:14px;text-align:center;">
+                ${it.qty}
+              </td>
+              <td style="padding:12px 16px;border-bottom:1px solid #eef0f2;color:#0f141d;font-size:14px;text-align:right;font-weight:600;">
+                ${formatINR(it.price * it.qty)}
+              </td>
+            </tr>`
+          )
+          .join('')
+      : `<tr><td colspan="3" style="padding:16px;color:#697f9f;font-size:14px;">Order items will be confirmed shortly.</td></tr>`;
+
     emailSentRef.current = true;
     try {
       await emailjs.send(
@@ -102,6 +138,13 @@ const CheckoutView = ({ isLoggedIn, userId, userEmail }) => {
           shipping_mobile:  shippingMobile,
           shipping_address: shippingAddress,
           payment_method:   paymentMethod,
+          // New itemized fields (template uses these; safe if unused)
+          items_text:       itemsText,
+          items_html:       itemsHtml,
+          subtotal:         formatINR(cartSubtotal),
+          shipping_fee:     cartShipping === 0 ? 'FREE' : formatINR(cartShipping),
+          order_total:      formatINR(cartTotal),
+          order_date:       new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
         },
         EMAILJS_PUBLIC_KEY
       );

@@ -244,7 +244,20 @@ const CartView = ({ token, isLoggedIn, userId, allProducts, onAddToCart }) => {
               // survives React strict-mode double renders, no mutation.
               // window.__swiftcartTotal kept as fallback for edge cases.
               window.__swiftcartTotal = total;
-              navigate('/checkout', { state: { total } });
+              // Pass the item list + price breakdown so the confirmation email
+              // can show an itemized receipt. Purely additive — `total` unchanged.
+              navigate('/checkout', {
+                state: {
+                  total,
+                  subtotal,
+                  shipping,
+                  items: cartItems.map((it) => ({
+                    name: it.product_name,
+                    qty: Number(it.product_qty || 1),
+                    price: Number(it.product_price || 0),
+                  })),
+                },
+              });
             }} className="mt-6">
             Proceed to checkout
           </Button>
