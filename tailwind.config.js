@@ -1,4 +1,3 @@
-// tailwind.config.js
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -9,7 +8,7 @@ export default {
     extend: {
       colors: {
         ink: {
-          50: '#f4f7fb',
+          50:  '#f4f7fb',
           100: '#d9e1eb',
           200: '#b7c7db',
           300: '#95afca',
@@ -22,14 +21,14 @@ export default {
           950: '#0f141d',
         },
         surface: {
-          50: '#f8fafb',
+          50:  '#f8fafb',
           100: '#f2f4f7',
           200: '#e8ecf2',
           300: '#dfe4eb',
           500: '#cfd8e2',
         },
         sapphire: {
-          50: '#eef5ff',
+          50:  '#eef5ff',
           100: '#dbe9ff',
           200: '#b8d4ff',
           500: '#4363d5',
@@ -37,7 +36,7 @@ export default {
           700: '#2e4392',
         },
         teal: {
-          50: '#fff2e8',
+          50:  '#fff2e8',
           100: '#ffd7c5',
           200: '#ffb890',
           300: '#ff935d',
@@ -48,7 +47,7 @@ export default {
           900: '#61220a',
         },
         copper: {
-          50: '#e7f5ed',
+          50:  '#e7f5ed',
           100: '#c7ead8',
           200: '#aae0c4',
           300: '#5bca95',
@@ -60,7 +59,7 @@ export default {
           900: '#033a29',
         },
         primary: {
-          50: '#fff2e8',
+          50:  '#fff2e8',
           100: '#ffd7c5',
           200: '#ffb890',
           300: '#ff935d',
@@ -80,21 +79,21 @@ export default {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
       animation: {
-        'fade-in': 'fade-in 0.5s ease-out',
+        'fade-in':  'fade-in 0.5s ease-out',
         'slide-up': 'slide-up 0.3s ease-out',
         'scale-up': 'scale-up 0.2s ease-out',
       },
       keyframes: {
         'fade-in': {
-          '0%': { opacity: '0' },
+          '0%':   { opacity: '0' },
           '100%': { opacity: '1' },
         },
         'slide-up': {
-          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '0%':   { opacity: '0', transform: 'translateY(10px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         'scale-up': {
-          '0%': { transform: 'scale(0.95)' },
+          '0%':   { transform: 'scale(0.95)' },
           '100%': { transform: 'scale(1)' },
         },
       },
