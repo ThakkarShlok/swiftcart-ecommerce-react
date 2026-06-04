@@ -1,159 +1,185 @@
-// src/ShopView.jsx
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import ProductCard from '../components/ui/ProductCard';
+import Button from '../components/ui/Button';
 import { getApiUrl, authHeaders, API_TOKEN } from '../api/apiConfig';
 
-const ShopView = ({ globalSearchQuery, token }) => {
+const ShopView = ({ globalSearchQuery, token, onAddToCart }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // Real-Time Sidebar Filtering & Sorting States
-  const [startPrice, setStartPrice] = useState(0);
-  const [endPrice, setEndPrice] = useState(100000);
-  const [sortOrder, setSortOrder] = useState(''); // Options: 'lowToHigh', 'highToLow', or ''
+  const [priceMin, setPriceMin] = useState(0);
+  const [priceMax, setPriceMax] = useState(100000);
+  const [sortOrder, setSortOrder] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
 
-  // UX Navigation Hook to transition across application paths cleanly
-  const navigate = useNavigate();
-
-  // Active fallback token configuration parameter matching App.jsx context
   const ACTIVE_TOKEN = token || API_TOKEN;
 
   useEffect(() => {
     const fetchShopItems = async () => {
       setLoading(true);
       try {
-        const emptyFormData = new FormData();
-        
-        // Pull full master products data matrix
-        const productRes = await axios.post(getApiUrl('api-list-product.php'), emptyFormData, {
-          headers: authHeaders(ACTIVE_TOKEN)
+        const formData = new FormData();
+        const productRes = await axios.post(getApiUrl('api-list-product.php'), formData, {
+          headers: authHeaders(ACTIVE_TOKEN),
         });
-        
-        if (productRes.data?.flag === "1") {
+
+        if (productRes.data?.flag === '1') {
           setItems(productRes.data.product_list || []);
         } else {
           setItems([]);
         }
       } catch (err) {
-        console.error("Shop items network load error:", err);
+        console.error('Shop items network load error:', err);
         setItems([]);
       } finally {
         setLoading(false);
       }
     };
+
     fetchShopItems();
   }, [ACTIVE_TOKEN]);
 
-  // Compute live filtered elements stream matrix
-  const visibleItems = items
-    .filter(item => {
-      const itemPrice = parseFloat(item.product_price || 0);
-      const matchesPrice = itemPrice >= startPrice && itemPrice <= endPrice;
-      
-      const searchStr = (globalSearchQuery || '').toLowerCase();
-      const matchesSearch = 
-        item.product_name?.toLowerCase().includes(searchStr) ||
-        item.product_details?.toLowerCase().includes(searchStr) ||
-        item.category_name?.toLowerCase().includes(searchStr);
+  const categories = useMemo(() => {
+    const list = items?.map((item) => item.category_name || 'Other') || [];
+    return ['All', ...Array.from(new Set(list))];
+  }, [items]);
 
-      return matchesPrice && matchesSearch;
-    })
-    .sort((a, b) => {
-      if (sortOrder === 'lowToHigh') return parseFloat(a.product_price) - parseFloat(b.product_price);
-      if (sortOrder === 'highToLow') return parseFloat(b.product_price) - parseFloat(a.product_price);
-      return 0;
-    });
+  const filteredItems = useMemo(() => {
+    const search = (globalSearchQuery || '').toLowerCase();
 
-  if (loading) return <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>Loading marketplace products grid...</div>;
+    return (items || [])
+      .filter((item) => {
+        const price = Number(item.product_price || 0);
+        const matchesPrice = price >= priceMin && price <= priceMax;
+        const matchesCategory = selectedCategory === 'All' || (item.category_name || 'Other') === selectedCategory;
+        const matchesSearch =
+          !search ||
+          item.product_name?.toLowerCase().includes(search) ||
+          item.product_details?.toLowerCase().includes(search) ||
+          item.category_name?.toLowerCase().includes(search);
+
+        return matchesPrice && matchesCategory && matchesSearch;
+      })
+      .sort((a, b) => {
+        if (sortOrder === 'lowToHigh') return Number(a.product_price || 0) - Number(b.product_price || 0);
+        if (sortOrder === 'highToLow') return Number(b.product_price || 0) - Number(a.product_price || 0);
+        return 0;
+      });
+  }, [items, globalSearchQuery, priceMin, priceMax, sortOrder, selectedCategory]);
 
   return (
-    <div style={{ display: 'flex', padding: '20px', gap: '30px', fontFamily: 'sans-serif' }}>
-      
-      {/* Sidebar Navigation & Filter Panel */}
-      <div style={{ width: '250px', borderRight: '1px solid #eee', paddingRight: '20px' }}>
-        <h3>Filter Control Desk</h3>
-        
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Min Price (₹):</label>
-          <input 
-            type="number" 
-            value={startPrice} 
-            onChange={(e) => setStartPrice(Number(e.target.value))} 
-            style={{ width: '100%', padding: '6px' }}
-          />
-        </div>
-
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Max Price (₹):</label>
-          <input 
-            type="number" 
-            value={endPrice} 
-            onChange={(e) => setEndPrice(Number(e.target.value))} 
-            style={{ width: '100%', padding: '6px' }}
-          />
-        </div>
-
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Sort By Price:</label>
-          <select 
-            value={sortOrder} 
-            onChange={(e) => setSortOrder(e.target.value)}
-            style={{ width: '100%', padding: '6px' }}
-          >
-            <option value="">Default (No Sorting)</option>
-            <option value="lowToHigh">Price: Low to High</option>
-            <option value="highToLow">Price: High to Low</option>
-          </select>
-        </div>
-
-        <button 
-          onClick={() => { setStartPrice(0); setEndPrice(100000); setSortOrder(''); }}
-          style={{ width: '100%', padding: '8px', cursor: 'pointer', backgroundColor: '#eee', border: '1px solid #ccc', borderRadius: '4px' }}
-        >
-          Reset All Filters
-        </button>
+    <div className="container-custom py-10">
+      <div className="mb-8 rounded-[1.75rem] border border-copper-100 bg-gradient-to-br from-copper-50 via-white to-surface-100 p-8 shadow-soft">
+        <p className="eyebrow text-copper-600">Shop smarter</p>
+        <h1 className="section-heading mt-2">Find your next buy</h1>
+        <p className="section-copy mt-3">Use search, budget, category, and sorting together for a more focused shopping flow.</p>
       </div>
 
-      {/* Primary Content Stream Matrix */}
-      <div style={{ flex: 1 }}>
-        <h2>Marketplace Catalog</h2>
-        
-        {visibleItems.length === 0 ? (
-          <div style={{ color: '#888', marginTop: '20px' }}>No items match the chosen pricing, sorting, or search criteria.</div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            {visibleItems.map(item => (
-              <div 
-                key={item.product_id} 
-                style={{ border: '1px solid #e1e4e6', borderRadius: '8px', padding: '15px', display: 'flex', gap: '20px', alignItems: 'center', backgroundColor: '#fff' }}
-              >
-                <div style={{ width: '120px', height: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <img src={item.product_image} alt={item.product_name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-                </div>
-
-                <div style={{ flex: 1 }}>
-                  <h3 style={{ margin: '0 0 5px 0', color: '#2c3e50' }}>{item.product_name}</h3>
-                  <div style={{ color: '#f39c12', fontSize: '14px', marginBottom: '5px' }}>Rating: ★★★★☆ (4.2)</div>
-                  <div style={{ fontWeight: 'bold', color: '#e74c3c', fontSize: '1.1rem', marginBottom: '5px' }}>Price: ₹{item.product_price}</div>
-                  <p style={{ color: '#666', margin: '0 0 10px 0', fontSize: '14px', lineHeight: '1.4' }}>
-                    {item.product_details || "No additional description details logged."}
-                  </p>
-                  
-                  {/* 🟢 FIXED: Updated route parameter string configuration to align with App.jsx */}
-                  <button 
-                    onClick={() => navigate(`/product/${item.product_id}`)}
-                    style={{ padding: '8px 16px', backgroundColor: '#3498db', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-                  >
-                    View Detail
-                  </button>
-                </div>
-              </div>
-            ))}
+      <div className="grid gap-6 xl:grid-cols-[300px_1fr]">
+        <aside className="h-fit rounded-[1.75rem] border border-ink-100 bg-surface-500 p-6 shadow-soft xl:sticky xl:top-28">
+          <div className="mb-6">
+            <p className="text-sm font-bold text-ink-950">Filter shop</p>
+            <p className="mt-1 text-sm text-ink-500">Narrow by need and budget.</p>
           </div>
-        )}
-      </div>
 
+          <div className="space-y-6">
+            <div>
+              <p className="mb-3 text-sm font-bold text-ink-700">Category</p>
+              <div className="flex flex-wrap gap-2">
+                {categories.map((category) => (
+                  <button
+                    key={category}
+                    type="button"
+                    onClick={() => setSelectedCategory(category)}
+                    className={`rounded-2xl border px-3 py-2 text-sm font-semibold transition ${selectedCategory === category ? 'border-copper-500 bg-copper-50 text-copper-700' : 'border-ink-100 bg-surface-500 text-ink-600 hover:bg-surface-100'}`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-3 text-sm font-bold text-ink-700">Price range</p>
+              <div className="grid gap-3">
+                <input
+                  type="number"
+                  min={0}
+                  value={priceMin}
+                  onChange={(e) => setPriceMin(Number(e.target.value))}
+                  placeholder="Min price"
+                  className="field"
+                />
+                <input
+                  type="number"
+                  min={0}
+                  value={priceMax}
+                  onChange={(e) => setPriceMax(Number(e.target.value))}
+                  placeholder="Max price"
+                  className="field"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-bold text-ink-700">Sort by</label>
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                className="field"
+              >
+                <option value="">Featured</option>
+                <option value="lowToHigh">Price: low to high</option>
+                <option value="highToLow">Price: high to low</option>
+              </select>
+            </div>
+
+            <Button
+              variant="secondary"
+              fullWidth
+              onClick={() => {
+                setSelectedCategory('All');
+                setPriceMin(0);
+                setPriceMax(100000);
+                setSortOrder('');
+              }}
+            >
+              Reset filters
+            </Button>
+          </div>
+        </aside>
+
+        <main>
+          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-medium text-ink-500">{filteredItems.length} items available</p>
+              <h2 className="text-2xl font-bold text-ink-950">Shop results</h2>
+            </div>
+            <div className="flex flex-wrap gap-2 text-sm text-ink-500">
+              <span className="rounded-2xl bg-surface-500 px-3 py-2">Search: {globalSearchQuery || 'All'}</span>
+              <span className="rounded-2xl bg-surface-500 px-3 py-2">Sort: {sortOrder || 'Featured'}</span>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {[...Array(8)].map((_, index) => (
+                <div key={index} className="h-[390px] animate-pulse rounded-[1.5rem] bg-surface-200" />
+              ))}
+            </div>
+          ) : filteredItems.length === 0 ? (
+            <div className="card-surface p-12 text-center text-ink-500">
+              No items match your filters.
+            </div>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {filteredItems.map((item) => (
+                <ProductCard key={item.product_id} product={item} onAddToCart={onAddToCart} />
+              ))}
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   );
 };

@@ -239,7 +239,13 @@ const CartView = ({ token, isLoggedIn, userId, allProducts, onAddToCart }) => {
               <p className="mt-1 text-xs text-ink-500">Inclusive of all taxes.</p>
             </div>
           </div>
-          <Button fullWidth size="lg" onClick={() => navigate('/checkout')} className="mt-6">
+          <Button fullWidth size="lg" onClick={() => {
+              // Pass total via router state — cleaner than window global,
+              // survives React strict-mode double renders, no mutation.
+              // window.__swiftcartTotal kept as fallback for edge cases.
+              window.__swiftcartTotal = total;
+              navigate('/checkout', { state: { total } });
+            }} className="mt-6">
             Proceed to checkout
           </Button>
           <Link to="/shop" className="mt-4 inline-flex w-full justify-center text-sm font-bold text-copper-700 hover:text-copper-900 transition-colors">
