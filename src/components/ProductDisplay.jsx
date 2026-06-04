@@ -1,5 +1,5 @@
 // src/ProductDisplay.jsx
-import React from 'react';
+// React import not required with new JSX transform
 import { Link } from 'react-router-dom';
 
 const ProductDisplay = ({ products, loading }) => {
