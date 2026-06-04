@@ -1,5 +1,5 @@
 // src/App.jsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import { getApiUrl, authHeaders, API_TOKEN } from './api/apiConfig';
@@ -53,7 +53,7 @@ function App() {
       const res = await axios.post(HOME_PRODUCTS_URL, formData, {
         headers: authHeaders(API_TOKEN)
       });
-      if (res.data && res.data.flag === "1") {
+      if (res.data && String(res.data.flag) === '1') {
         setProducts(res.data.product_list || []);
       } else {
         setProducts([]);
