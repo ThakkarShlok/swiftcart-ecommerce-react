@@ -1,19 +1,47 @@
 import { useEffect, useRef, useState } from 'react';
 import emailjs from '@emailjs/browser';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import Button from '../components/ui/Button';
 import { ToastContainer, useToast } from '../components/ui/Toast';
 import { getApiUrl, authHeaders } from '../api/apiConfig';
 
-const EMAILJS_SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-const EMAILJS_PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+const EMAILJS_SERVICE_ID      = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+const EMAILJS_TEMPLATE_ID     = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+const EMAILJS_PUBLIC_KEY      = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
+// ── Razorpay public key (KEY_ID only — safe to expose on client) ──────────
+// The KEY_SECRET lives ONLY in /api/create-order.js and /api/verify-payment.js
+// and is NEVER sent to the browser.
+const RAZORPAY_KEY = import.meta.env.VITE_RAZORPAY_KEY_ID;
+
+// ── API base for Vercel serverless functions ──────────────────────────────
+// When frontend and /api/* are on the same Vercel deployment (which is the
+// default), we use RELATIVE paths — no PROXY_URL needed, no CORS issue.
+// Only override via env if you've split frontend & API to different domains.
+const API_BASE = import.meta.env.VITE_PAYMENT_PROXY_URL?.replace(/\/$/, '') || '';
+
+// Dynamically load Razorpay checkout script — deferred until user clicks Pay
+const loadRazorpayScript = () =>
+  new Promise((resolve) => {
+    if (window.Razorpay) { resolve(true); return; }
+    const script    = document.createElement('script');
+    script.src      = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload   = () => resolve(true);
+    script.onerror  = () => resolve(false);
+    document.body.appendChild(script);
+  });
 
 const CheckoutView = ({ isLoggedIn, userId, userEmail }) => {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const WHATSAPP_NUMBER = '918128698935'; // +91 8128698935
+  // ── Cart total: passed via router state (preferred) or global fallback ──
+  // CartView does: navigate('/checkout', { state: { total } })
+  // This is safer than window.__swiftcartTotal which can be stale on refresh.
+  const cartTotal = location.state?.total ?? window.__swiftcartTotal ?? 0;
+
+  const WHATSAPP_NUMBER = '918128698935';
 
   const buildWhatsAppUrl = () => {
     const ref = orderRef ? `#${orderRef}` : '';
@@ -32,28 +60,30 @@ const CheckoutView = ({ isLoggedIn, userId, userEmail }) => {
     ].join('\n');
     return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
   };
+
   const { toasts, addToast, removeToast } = useToast();
-  const emailSentRef = useRef(false); // guard — send confirmation email exactly once
-  const [shippingName, setShippingName] = useState('');
-  const [shippingMobile, setShippingMobile] = useState('');
+  const emailSentRef = useRef(false);
+
+  const [shippingName,    setShippingName]    = useState('');
+  const [shippingMobile,  setShippingMobile]  = useState('');
   const [shippingAddress, setShippingAddress] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('COD');
-  const [submitting, setSubmitting] = useState(false);
-  const [isOrderSuccess, setIsOrderSuccess] = useState(false);
-  const [orderRef, setOrderRef]             = useState('');
+  const [paymentMethod,   setPaymentMethod]   = useState('COD');
+  const [submitting,      setSubmitting]      = useState(false);
+  const [isOrderSuccess,  setIsOrderSuccess]  = useState(false);
+  const [orderRef,        setOrderRef]        = useState('');
+  const [razorpayPaymentId, setRazorpayPaymentId] = useState('');
+  const [downloadingInvoice, setDownloadingInvoice] = useState(false);
 
   useEffect(() => {
     if (!isLoggedIn || !userId) navigate('/');
   }, [isLoggedIn, userId, navigate]);
 
   const sendConfirmationEmail = async (ref) => {
-    // Guard: only ever send once, even if effect re-runs
     if (emailSentRef.current) return;
     if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
       console.warn('EmailJS env vars not set — skipping confirmation email.');
       return;
     }
-    // Need a recipient email — passed from App.jsx via userData.user_email
     const recipientEmail = userEmail || '';
     if (!recipientEmail) {
       console.warn('No user email available — skipping confirmation email.');
@@ -65,26 +95,22 @@ const CheckoutView = ({ isLoggedIn, userId, userEmail }) => {
         EMAILJS_SERVICE_ID,
         EMAILJS_TEMPLATE_ID,
         {
-          to_email:       recipientEmail,
-          customer_name:  shippingName,
-          order_ref:      ref || 'N/A',
-          shipping_name:  shippingName,
-          shipping_mobile: shippingMobile,
+          to_email:         recipientEmail,
+          customer_name:    shippingName,
+          order_ref:        ref || 'N/A',
+          shipping_name:    shippingName,
+          shipping_mobile:  shippingMobile,
           shipping_address: shippingAddress,
-          payment_method: paymentMethod,
+          payment_method:   paymentMethod,
         },
         EMAILJS_PUBLIC_KEY
       );
       console.log('✅ Order confirmation email sent to', recipientEmail);
     } catch (err) {
-      // Email failure is non-critical — order is already placed
-      // Don't show an error toast, just log it silently
       console.error('EmailJS error:', err);
-      emailSentRef.current = false; // allow retry if needed
+      emailSentRef.current = false;
     }
   };
-
-  const [downloadingInvoice, setDownloadingInvoice] = useState(false);
 
   const generateCheckoutInvoice = async () => {
     setDownloadingInvoice(true);
@@ -100,7 +126,6 @@ const CheckoutView = ({ isLoggedIn, userId, userEmail }) => {
       const INK_400 = [161, 161, 170];
       const SURF    = [244, 244, 245];
 
-      // Header
       doc.setFillColor(...GREEN);
       doc.rect(0, 0, PAGE_W, 28, 'F');
       doc.setFont('helvetica', 'bold');
@@ -112,11 +137,8 @@ const CheckoutView = ({ isLoggedIn, userId, userEmail }) => {
       doc.text('ORDER CONFIRMATION', COL_R, 12, { align: 'right' });
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      if (orderRef) {
-        doc.text(`Order #${orderRef}`, COL_R, 20, { align: 'right' });
-      }
+      if (orderRef) doc.text(`Order #${orderRef}`, COL_R, 20, { align: 'right' });
 
-      // Order details
       let y = 40;
       doc.setTextColor(...INK_950);
       doc.setFontSize(9);
@@ -126,75 +148,171 @@ const CheckoutView = ({ isLoggedIn, userId, userEmail }) => {
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...INK_400);
       const details = [
-        ['Name', shippingName],
-        ['Mobile', shippingMobile],
+        ['Name',    shippingName],
+        ['Mobile',  shippingMobile],
         ['Address', shippingAddress],
         ['Payment', paymentMethod],
-        ['Date', new Date().toLocaleDateString('en-IN')],
+        ['Date',    new Date().toLocaleDateString('en-IN')],
       ];
       details.forEach(([label, val]) => {
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...INK_950);
+        doc.setFont('helvetica', 'bold');   doc.setTextColor(...INK_950);
         doc.text(`${label}:`, MARGIN, y);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(...INK_400);
+        doc.setFont('helvetica', 'normal'); doc.setTextColor(...INK_400);
         doc.text(String(val || 'N/A'), MARGIN + 28, y);
         y += 7;
       });
 
-      // Store info right column
-      doc.setTextColor(...INK_950);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
+      doc.setTextColor(...INK_950); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
       doc.text('SwiftCart', COL_R, 40, { align: 'right' });
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(...INK_400);
+      doc.setFont('helvetica', 'normal'); doc.setTextColor(...INK_400);
       doc.text('A-1705 Mondeal Heights, Satellite', COL_R, 47, { align: 'right' });
-      doc.text('Ahmedabad, Gujarat - 380015', COL_R, 54, { align: 'right' });
-      doc.text('swiftcartsupport2026@gmail.com', COL_R, 61, { align: 'right' });
+      doc.text('Ahmedabad, Gujarat - 380015',       COL_R, 54, { align: 'right' });
+      doc.text('swiftcartsupport2026@gmail.com',    COL_R, 61, { align: 'right' });
 
-      // Divider
       y = Math.max(y + 4, 78);
-      doc.setDrawColor(228, 228, 231);
-      doc.setLineWidth(0.4);
-      doc.line(MARGIN, y, COL_R, y);
-      y += 12;
+      doc.setDrawColor(228, 228, 231); doc.setLineWidth(0.4);
+      doc.line(MARGIN, y, COL_R, y); y += 12;
 
-      // Policies footer
       doc.setFillColor(...SURF);
       doc.rect(MARGIN, y - 5, COL_R - MARGIN, 28, 'F');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(...INK_950);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...INK_950);
       doc.text('What happens next?', MARGIN + 4, y + 2);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
-      doc.setTextColor(...INK_400);
-      doc.text('1. We will confirm your order within 24 hours.', MARGIN + 4, y + 10);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...INK_400);
+      doc.text('1. We will confirm your order within 24 hours.',               MARGIN + 4, y + 10);
       doc.text('2. You will receive a shipping notification once dispatched.', MARGIN + 4, y + 17);
       y += 36;
 
-      // Footer
-      doc.setDrawColor(228, 228, 231);
-      doc.line(MARGIN, y, COL_R, y);
-      y += 8;
-      doc.setFontSize(7.5);
-      doc.setTextColor(...INK_400);
+      doc.setDrawColor(228, 228, 231); doc.line(MARGIN, y, COL_R, y); y += 8;
+      doc.setFontSize(7.5); doc.setTextColor(...INK_400);
       doc.text('Thank you for shopping with SwiftCart!  ·  Free shipping above Rs.999  ·  30-day returns', MARGIN, y);
       y += 5;
       doc.text('swiftcartsupport2026@gmail.com  ·  +91 81286 98935  ·  swiftcart.com', MARGIN, y);
-
       doc.setFontSize(7);
-      const footerText = 'Page 1 of 1  ·  SwiftCart Order Confirmation' + (orderRef ? `  ·  Order #${orderRef}` : '');
-      doc.text(footerText, PAGE_W / 2, 290, { align: 'center' });
+      doc.text(
+        'Page 1 of 1  ·  SwiftCart Order Confirmation' + (orderRef ? `  ·  Order #${orderRef}` : ''),
+        PAGE_W / 2, 290, { align: 'center' }
+      );
 
-      const invoiceFileName = orderRef ? 'SwiftCart-Order-' + orderRef + '.pdf' : 'SwiftCart-Order.pdf';
+      const invoiceFileName = orderRef
+        ? `SwiftCart-Order-${orderRef}.pdf`
+        : 'SwiftCart-Order.pdf';
       doc.save(invoiceFileName);
     } catch (err) {
       console.error('Checkout invoice error:', err);
     } finally {
       setDownloadingInvoice(false);
     }
+  };
+
+  // ── Razorpay payment handler ─────────────────────────────────────────────
+  const handleRazorpayPayment = async () => {
+    // Guard: RAZORPAY_KEY (public KEY_ID) must be set in .env
+    // RAZORPAY_KEY_SECRET is NEVER checked here — it only exists server-side
+    if (!RAZORPAY_KEY) {
+      addToast('Payment gateway not configured. Please use Cash on Delivery.', 'error');
+      return false;
+    }
+
+    // Step 1: Load Razorpay checkout.js
+    const scriptLoaded = await loadRazorpayScript();
+    if (!scriptLoaded) {
+      addToast('Could not load payment gateway. Check your connection.', 'error');
+      return false;
+    }
+
+    // Step 2: Get cart total
+    // Prefer router state (most reliable), fall back to window global
+    const amountInPaise = Math.round(cartTotal * 100);
+    if (!amountInPaise || amountInPaise < 100) {
+      addToast('Cart total is invalid. Please return to cart and try again.', 'error');
+      return false;
+    }
+
+    // Step 3: Create order via Vercel serverless function
+    // Uses RELATIVE URL — works on Vercel (same domain) and localhost (Vite proxy)
+    let razorpayOrderId;
+    try {
+      const createRes = await fetch(`${API_BASE}/api/create-order`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          amount:  amountInPaise,
+          receipt: `rcpt_${userId}_${Date.now()}`.slice(0, 40),
+        }),
+      });
+      const createData = await createRes.json();
+      if (!createRes.ok || !createData.razorpay_order_id) {
+        throw new Error(createData.error || 'Order creation failed');
+      }
+      razorpayOrderId = createData.razorpay_order_id;
+    } catch (err) {
+      console.error('[Razorpay] Create order error:', err);
+      addToast('Could not initiate payment. Please try again.', 'error');
+      return false;
+    }
+
+    // Step 4: Open Razorpay checkout modal
+    return new Promise((resolve) => {
+      const options = {
+        key:         RAZORPAY_KEY,    // ✅ Public KEY_ID only — safe on client
+        order_id:    razorpayOrderId,
+        name:        'SwiftCart',
+        description: 'Secure checkout',
+        prefill: {
+          name:    shippingName,
+          contact: shippingMobile,
+        },
+        theme: { color: '#00875A' },
+        modal: {
+          ondismiss: () => {
+            addToast('Payment cancelled. Your cart is saved.', 'warning');
+            setSubmitting(false);
+            resolve(false);
+          },
+        },
+        handler: async (response) => {
+          // Step 5: Verify HMAC signature via serverless function
+          // The KEY_SECRET is used server-side — client never sees it
+          try {
+            const verifyRes = await fetch(`${API_BASE}/api/verify-payment`, {
+              method:  'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body:    JSON.stringify({
+                razorpay_order_id:   response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature:  response.razorpay_signature,
+              }),
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyData.verified) {
+              setRazorpayPaymentId(response.razorpay_payment_id);
+              resolve(response.razorpay_payment_id); // truthy = success
+            } else {
+              addToast('Payment verification failed. Contact support.', 'error');
+              setSubmitting(false);
+              resolve(false);
+            }
+          } catch (err) {
+            console.error('[Razorpay] Verify error:', err);
+            addToast(
+              `Verification error. Keep this payment ID: ${response.razorpay_payment_id}`,
+              'error'
+            );
+            setSubmitting(false);
+            resolve(false);
+          }
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', (resp) => {
+        console.error('[Razorpay] Payment failed:', resp.error);
+        addToast(resp.error?.description || 'Payment failed. Try again.', 'error');
+        setSubmitting(false);
+        resolve(false);
+      });
+      rzp.open();
+    });
   };
 
   const handlePlaceOrder = async (event) => {
@@ -213,22 +331,37 @@ const CheckoutView = ({ isLoggedIn, userId, userEmail }) => {
 
     setSubmitting(true);
     try {
-      const orderPayload = new FormData();
-      orderPayload.append('user_id', userId);
-      orderPayload.append('shipping_name', shippingName);
-      orderPayload.append('shipping_mobile', shippingMobile);
-      orderPayload.append('shipping_address', shippingAddress);
-      orderPayload.append('payment_method', paymentMethod);
+      const isRazorpay = paymentMethod !== 'COD';
 
-      const res = await axios.post(getApiUrl('api-add-order.php'), orderPayload, { headers: authHeaders() });
+      if (isRazorpay) {
+        const paymentId = await handleRazorpayPayment();
+        if (!paymentId) return; // user cancelled or error — already handled
+      }
+
+      // Save order to existing PHP backend (unchanged)
+      const orderPayload = new FormData();
+      orderPayload.append('user_id',          userId);
+      orderPayload.append('shipping_name',    shippingName);
+      orderPayload.append('shipping_mobile',  shippingMobile);
+      orderPayload.append('shipping_address', shippingAddress);
+      orderPayload.append('payment_method',   paymentMethod);
+      if (razorpayPaymentId) {
+        orderPayload.append('razorpay_payment_id', razorpayPaymentId);
+      }
+
+      const res = await axios.post(
+        getApiUrl('api-add-order.php'),
+        orderPayload,
+        { headers: authHeaders() }
+      );
+
       if (String(res.data.flag) === '1' || String(res.data.status) === '1') {
         const ref = res.data.order_id || res.data.id || '';
         setOrderRef(ref);
         setIsOrderSuccess(true);
-        // Fire confirmation email — non-blocking, fails silently if EmailJS not configured
         sendConfirmationEmail(ref);
       } else {
-        addToast(res.data.message || 'Could not place your order.', 'error');
+        addToast(res.data.message || 'Could not save your order.', 'error');
       }
     } catch (err) {
       console.error('Order error:', err);
@@ -238,11 +371,11 @@ const CheckoutView = ({ isLoggedIn, userId, userEmail }) => {
     }
   };
 
+  // ── Success screen ───────────────────────────────────────────────────────
   if (isOrderSuccess) {
     return (
       <div className="container-custom py-16">
         <div className="card-surface mx-auto max-w-lg p-8 text-center">
-          {/* Success icon */}
           <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-copper-500 text-3xl text-white">
             ✓
           </div>
@@ -255,7 +388,6 @@ const CheckoutView = ({ isLoggedIn, userId, userEmail }) => {
             Your order has been placed successfully. We'll get it to you soon.
           </p>
 
-          {/* Email confirmation note */}
           {userEmail && (
             <div className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-ink-100 bg-surface-100 px-4 py-2 text-xs text-ink-500">
               <svg className="h-3.5 w-3.5 shrink-0 text-copper-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -265,17 +397,18 @@ const CheckoutView = ({ isLoggedIn, userId, userEmail }) => {
             </div>
           )}
 
-          {/* Delivery summary */}
           <div className="mt-6 rounded-2xl bg-surface-100 border border-ink-100 p-4 text-left space-y-1.5">
             <p className="text-xs font-semibold uppercase tracking-widest text-ink-400 mb-2">Delivery details</p>
             <p className="text-sm text-ink-700"><span className="font-semibold text-ink-950">Name:</span> {shippingName}</p>
             <p className="text-sm text-ink-700"><span className="font-semibold text-ink-950">Mobile:</span> {shippingMobile}</p>
             <p className="text-sm text-ink-700"><span className="font-semibold text-ink-950">Address:</span> {shippingAddress}</p>
             <p className="text-sm text-ink-700"><span className="font-semibold text-ink-950">Payment:</span> {paymentMethod}</p>
+            {razorpayPaymentId && (
+              <p className="text-sm text-ink-700"><span className="font-semibold text-ink-950">Payment ID:</span> {razorpayPaymentId}</p>
+            )}
           </div>
 
           <div className="mt-6 grid gap-3">
-            {/* WhatsApp notification CTA */}
             <a
               href={buildWhatsAppUrl()}
               target="_blank"
@@ -288,7 +421,6 @@ const CheckoutView = ({ isLoggedIn, userId, userEmail }) => {
               Send order details on WhatsApp
             </a>
 
-            {/* Download invoice — inline on success screen */}
             <button
               onClick={generateCheckoutInvoice}
               disabled={downloadingInvoice}
@@ -330,6 +462,7 @@ const CheckoutView = ({ isLoggedIn, userId, userEmail }) => {
     );
   }
 
+  // ── Checkout form ────────────────────────────────────────────────────────
   return (
     <div className="container-custom py-10">
       <div className="mb-8">
@@ -361,13 +494,18 @@ const CheckoutView = ({ isLoggedIn, userId, userEmail }) => {
               Payment method
               <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="field mt-2">
                 <option value="COD">Cash on delivery</option>
-                <option value="Card">Credit / debit card</option>
-                <option value="UPI">UPI</option>
+                <option value="Card">Credit / debit card (Razorpay)</option>
+                <option value="UPI">UPI (Razorpay)</option>
+                <option value="Netbanking">Net banking (Razorpay)</option>
               </select>
             </label>
 
             <Button type="submit" fullWidth size="lg" loading={submitting}>
-              {submitting ? 'Placing order...' : 'Place order securely'}
+              {submitting
+                ? (paymentMethod === 'COD' ? 'Placing order…' : 'Opening payment…')
+                : paymentMethod === 'COD'
+                ? 'Place order — Cash on delivery'
+                : 'Pay securely with Razorpay'}
             </Button>
           </form>
         </section>
