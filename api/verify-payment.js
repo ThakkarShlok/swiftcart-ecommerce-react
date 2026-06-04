@@ -6,6 +6,7 @@ const ALLOWED_ORIGINS = new Set([
   'http://localhost:3002',
   'http://localhost:5173',
   'http://localhost:4173',
+  'https://swiftcart-ai-ecommerce.vercel.app',
   'https://ai-enabled-ecommerce-app.vercel.app',
 ]);
 
