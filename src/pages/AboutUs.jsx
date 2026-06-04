@@ -1,5 +1,5 @@
 // src/pages/AboutUs.jsx
-import React from 'react';
+// React import not required with the automatic JSX runtime
 import { Link } from 'react-router-dom';
 
 // Import your photo
@@ -36,10 +36,21 @@ const AboutUs = () => {
     },
   ];
 
+  const techStack = [
+    { name: 'React 19', category: 'Frontend' },
+    { name: 'Tailwind CSS', category: 'Styling' },
+    { name: 'Gemini AI', category: 'Intelligence' },
+    { name: 'Razorpay', category: 'Payments' },
+    { name: 'Serverless', category: 'Backend' },
+    { name: 'Vite', category: 'Build' },
+  ];
+
   const milestones = [
-    { year: '2024', title: 'Public launch', description: 'SwiftCart opens to customers across India' },
-    { year: '2024', title: '10,000 orders', description: 'Reached 10,000 successful deliveries' },
-    { year: '2025', title: 'Mobile app', description: 'Native iOS and Android apps coming soon' },
+    { year: '2026', title: 'SwiftCart is born', description: 'Engineered from the ground up — React 19 frontend, an AI-powered shopping assistant, and a secure serverless Razorpay checkout, all shipped solo.' },
+    { year: '2026', title: 'AI-first commerce', description: 'Integrated Gemini-powered recommendations and intelligent cart upsell, turning product discovery into something effortless.' },
+    { year: '2027', title: 'Scale to 1M users', description: 'Expand across India with a native mobile app, real-time order tracking, and infrastructure built to handle serious traffic.' },
+    { year: '2028', title: 'Go pan-Asia', description: 'Launch multi-currency and multi-language support, and onboard regional sellers at scale across emerging markets.' },
+    { year: '2030', title: 'The everything store, reimagined', description: 'A fully autonomous, AI-driven commerce platform setting the global benchmark for trust, speed, and experience.' },
   ];
 
   return (
@@ -47,9 +58,11 @@ const AboutUs = () => {
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-ink-950 via-ink-900 to-copper-950 text-white">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-copper-500/20 via-transparent to-transparent" />
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-copper-500/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-copper-400/10 rounded-full blur-3xl" />
         <div className="container-custom relative py-24 md:py-32">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-1.5 text-sm font-medium mb-6">
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-1.5 text-sm font-medium mb-6 border border-white/10">
               <span className="w-2 h-2 bg-copper-400 rounded-full animate-pulse" />
               Our story
             </div>
@@ -60,7 +73,7 @@ const AboutUs = () => {
             <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
               SwiftCart was born from a simple belief: online shopping should be clear, 
               fast, and genuinely helpful. No gimmicks. No hidden agendas. Just great products 
-              and a better experience.
+              and a better experience — powered by thoughtful engineering and AI.
             </p>
           </div>
         </div>
@@ -97,18 +110,20 @@ const AboutUs = () => {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <p className="text-ink-700 leading-relaxed mb-4">
-                <span className="font-bold text-ink-950">In 2024</span>, our founder Shlok noticed that 
+                <span className="font-bold text-ink-950">In 2026</span>, our founder Shlok noticed that 
                 shopping online had become overwhelming. Endless pop-ups, confusing checkout flows, 
                 and product pages that hid the information you actually needed.
               </p>
               <p className="text-ink-700 leading-relaxed mb-4">
-                So he built SwiftCart — a lightweight, honest alternative. No distracting carousels, 
-                no fake urgency timers, just clear product information and a checkout that works.
+                So he built SwiftCart — a lightweight, honest alternative powered by AI. No distracting 
+                carousels, no fake urgency timers, just clear product information, intelligent 
+                recommendations, and a checkout that works.
               </p>
               <p className="text-ink-700 leading-relaxed">
-                What started as a personal project quickly grew into a platform serving thousands 
-                of customers. Today, SwiftCart is on a mission to make online shopping feel 
-                <span className="font-semibold text-copper-600"> calm, confident, and effortless</span>.
+                What started as a personal engineering project is growing into a platform with a bold 
+                mission: to make online shopping feel 
+                <span className="font-semibold text-copper-600"> calm, confident, and effortless</span> — 
+                for everyone, everywhere.
               </p>
             </div>
             <div className="bg-gradient-to-br from-copper-100 to-ink-100 rounded-2xl p-8">
@@ -149,15 +164,42 @@ const AboutUs = () => {
         </div>
       </section>
 
+      {/* Built With / Tech Stack Section */}
+      <section className="py-20 bg-ink-950 text-white">
+        <div className="container-custom">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-1.5 text-sm font-medium mb-4 border border-white/10">
+              <span className="w-2 h-2 bg-copper-400 rounded-full" />
+              Engineered for performance
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Built with a modern stack
+            </h2>
+            <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+              Every layer chosen deliberately — for speed, security, and a great experience.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 max-w-4xl mx-auto">
+            {techStack.map((tech) => (
+              <div key={tech.name} className="bg-white/5 border border-white/10 rounded-xl p-4 text-center hover:bg-white/10 hover:border-copper-400/40 transition-all">
+                <div className="font-bold text-white">{tech.name}</div>
+                <div className="text-xs text-copper-400 mt-1 font-medium uppercase tracking-wide">{tech.category}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Team Section */}
       <section className="py-20 bg-gray-50">
         <div className="container-custom">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-ink-950 mb-4">
-              Built by a team that cares
+              Built by a founder who cares
             </h2>
             <p className="text-lg text-ink-600 max-w-2xl mx-auto">
-              We're a small, focused team. Here's who's behind SwiftCart.
+              SwiftCart is designed, engineered, and shipped end-to-end by one person. Here's who's behind it.
             </p>
           </div>
 
@@ -179,23 +221,24 @@ const AboutUs = () => {
                 {/* RIGHT SIDE: Bio Content */}
                 <div className="md:w-3/5 p-6 md:p-8 flex flex-col justify-center">
                   <div className="inline-flex items-center gap-2 bg-copper-50 text-copper-700 rounded-full px-3 py-1 text-xs font-semibold w-fit mb-3">
-                    Founder & Product Engineer
+                    Founder & Full-Stack Engineer
                   </div>
                   <h3 className="text-2xl md:text-3xl font-bold text-ink-950">Shlok Thakkar</h3>
-                  <p className="text-copper-600 font-medium mb-4">Building simple, honest e-commerce</p>
+                  <p className="text-copper-600 font-medium mb-4">Building simple, honest, AI-powered e-commerce</p>
                   
                   <p className="text-ink-600 leading-relaxed mb-4">
-                    Shlok builds SwiftCart with a focus on performance, clarity, and user trust. 
-                    A second-year Computer Engineering student who believes that great software 
-                    doesn't need to be complicated — just thoughtful.
+                    Shlok architected SwiftCart end-to-end — from a React 19 frontend and an AI shopping 
+                    assistant to a secure, serverless Razorpay payment layer. A Computer Engineering student 
+                    who believes great software isn't complicated, just deeply thoughtful.
                   </p>
                   
                   <p className="text-ink-600 leading-relaxed mb-5">
-                    When he's not coding, Shlok studies product design patterns, contributes to 
-                    open source, and thinks about how to make online shopping less overwhelming.
+                    He's driven by a single goal: to ship products that earn trust. When he's not coding, 
+                    he's studying system design, contributing to open source, and obsessing over how to make 
+                    technology feel effortless for the people who use it.
                   </p>
                   
-                  <div className="flex gap-6 pt-3">
+                  <div className="flex flex-wrap gap-x-6 gap-y-3 pt-3">
                     <a
                       href="https://github.com/ThakkarShlok"
                       target="_blank"
@@ -218,6 +261,15 @@ const AboutUs = () => {
                       </svg>
                       <span className="text-sm font-medium">LinkedIn</span>
                     </a>
+                    <a
+                      href="mailto:thakkarshlok2007@gmail.com"
+                      className="inline-flex items-center gap-2 text-ink-600 hover:text-ink-950 transition-colors group"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      <span className="text-sm font-medium">Email</span>
+                    </a>
                   </div>
                 </div>
               </div>
@@ -231,10 +283,10 @@ const AboutUs = () => {
         <div className="container-custom">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-ink-950 mb-4">
-              The journey so far
+              The road ahead
             </h2>
             <p className="text-lg text-ink-600 max-w-2xl mx-auto">
-              From first line of code to serving thousands of customers.
+              From first line of code in 2026 to redefining global commerce. This is just the beginning.
             </p>
           </div>
 
@@ -242,9 +294,9 @@ const AboutUs = () => {
             <div className="relative">
               <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-gray-200" />
               {milestones.map((milestone, idx) => (
-                <div key={milestone.year} className={`relative flex flex-col md:flex-row gap-4 mb-8 ${idx % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
+                <div key={`${milestone.year}-${milestone.title}`} className={`relative flex flex-col md:flex-row gap-4 mb-8 ${idx % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
                   <div className="flex-1 md:text-right">
-                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-copper-200 transition-all">
                       <div className="text-copper-600 font-bold text-sm">{milestone.year}</div>
                       <h3 className="font-bold text-ink-950 mt-1">{milestone.title}</h3>
                       <p className="text-sm text-ink-600 mt-1">{milestone.description}</p>

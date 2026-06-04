@@ -1,5 +1,5 @@
 // src/pages/VerifyOtp.jsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { getApiUrl, authHeaders, API_TOKEN } from '../api/apiConfig';

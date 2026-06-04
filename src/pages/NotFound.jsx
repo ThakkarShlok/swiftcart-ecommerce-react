@@ -1,4 +1,4 @@
-import React from 'react';
+// React import not required with automatic JSX runtime
 import { Link } from 'react-router-dom';
 
 const NotFound = () => {
