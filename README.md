@@ -2,7 +2,7 @@
 
 A full-stack, AI-powered e-commerce web application built with React 19 and Vite. SwiftCart combines a responsive storefront, an AI shopping assistant, and a secure serverless payment layer — designed and built end-to-end as a solo project.
 
-> **Live demo:** [ai-enabled-ecommerce-app.vercel.app](https://ai-enabled-ecommerce-app.vercel.app)
+> **Live demo:** [swiftcart-ai-ecommerce.vercel.app](https://swiftcart-ai-ecommerce.vercel.app/)
 > **Author:** Shlok Thakkar · [GitHub](https://github.com/ThakkarShlok) · [LinkedIn](https://www.linkedin.com/in/shlok-thakkar-58a033354)
 
 ---
