@@ -8,12 +8,6 @@ const AIReviewSummary = ({ reviews, productName }) => {
   const [error, setError] = useState(null);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  useEffect(() => {
-    if (isExpanded && reviews?.length >= 2 && !summary && !loading) {
-      fetchSummary();
-    }
-  }, [isExpanded, reviews]);
-
   const fetchSummary = async () => {
     setLoading(true);
     setError(null);
@@ -31,6 +25,12 @@ const AIReviewSummary = ({ reviews, productName }) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (isExpanded && reviews?.length >= 2 && !summary && !loading) {
+      fetchSummary();
+    }
+  }, [isExpanded, reviews]);
 
   // Only show if 2+ reviews
   if (!reviews || reviews.length < 2) {

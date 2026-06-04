@@ -106,6 +106,8 @@ const SuggestionCard = ({ product, reason, onAddToCart }) => {
     setAdded(true);
     setTimeout(() => setAdded(false), 2500);
   };
+  
+  // SuggestionCard should call the onAddToCart prop passed from parent
 
   return (
     <article className="card-surface flex flex-col overflow-hidden transition duration-300 hover:-translate-y-1 hover:border-copper-100 hover:shadow-soft">
@@ -209,6 +211,9 @@ const AICartUpsell = ({ cartItems, allProducts, onAddToCart }) => {
 
   if (!cartItems?.length) return null;
 
+  // Stable wrapper to call latest onAddToCart from ref without accessing ref during render
+  const callAddToCart = (product) => onAddToCartRef.current?.(product);
+
   return (
     <section className="mt-10">
       <div className="mb-6 flex items-center justify-between gap-4">
@@ -246,7 +251,7 @@ const AICartUpsell = ({ cartItems, allProducts, onAddToCart }) => {
               key={product.product_id}
               product={product}
               reason={reason}
-              onAddToCart={onAddToCartRef.current}
+              onAddToCart={callAddToCart}
             />
           ))}
         </div>
